@@ -112,9 +112,10 @@ $chart-margin-left: 60px;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: $chart-background;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  // Make charts sit on a transparent canvas with no card box
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
   font-family: $chart-font-primary;
 }
 
@@ -366,4 +367,3 @@ $chart-margin-left: 60px;
   font-size: $chart-font-sm;
   text-align: center;
 }
-

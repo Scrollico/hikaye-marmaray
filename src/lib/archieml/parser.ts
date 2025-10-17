@@ -7,7 +7,14 @@ import archieml from 'archieml';
 
 export interface StoryStep {
   id: string;
-  type: 'text' | 'map' | 'chart' | 'media' | 'intro' | 'conclusion';
+  type:
+    | 'text'
+    | 'map'
+    | 'chart'
+    | 'media'
+    | 'intro'
+    | 'conclusion'
+    | 'expert-opinion';
   headline?: string;
   text?: string;
   media?: {
@@ -70,26 +77,28 @@ export class ArchieMLParser {
    */
   parse(archieMLText: string): ParsedStory {
     const parsed = archieml.load(archieMLText);
-    
+
     console.log('ArchieML parsed result:', parsed); // Debug log
-    
+
     // Extract metadata
     const meta = {
       title: parsed.title || 'Untitled Story',
       description: parsed.description,
       authors: this.parseAuthors(parsed.authors),
-      publishDate: parsed.publishDate
+      publishDate: parsed.publishDate,
     };
 
     // Extract layout configuration
     const layout = {
-      type: (parsed.layout?.type || 'two-column') as 'single-column' | 'two-column',
-      sticky: (parsed.layout?.sticky || 'right') as 'left' | 'right'
+      type: (parsed.layout?.type || 'two-column') as
+        | 'single-column'
+        | 'two-column',
+      sticky: (parsed.layout?.sticky || 'right') as 'left' | 'right',
     };
 
     // Parse steps - handle different possible formats
     let steps: StoryStep[] = [];
-    
+
     if (Array.isArray(parsed.steps)) {
       // Steps is already an array
       steps = this.parseSteps(parsed.steps);
@@ -105,7 +114,9 @@ export class ArchieMLParser {
 
     // If we still don't have steps, the ArchieML format might be incorrect
     if (steps.length === 0) {
-      console.warn('⚠️ No steps found. Make sure your ArchieML format is correct:');
+      console.warn(
+        '⚠️ No steps found. Make sure your ArchieML format is correct:'
+      );
       console.warn('Use [steps] to start, {} between steps, and [] to end');
     } else {
       console.log(`✅ Successfully parsed ${steps.length} steps`);
@@ -120,7 +131,7 @@ export class ArchieMLParser {
       meta,
       steps,
       layout,
-      theme
+      theme,
     };
   }
 
@@ -145,7 +156,7 @@ export class ArchieMLParser {
         id: step.id || `step-${index + 1}`,
         type: this.determineStepType(step),
         headline: step.headline,
-        text: step.text
+        text: step.text,
       };
 
       // Parse media
@@ -168,7 +179,7 @@ export class ArchieMLParser {
       if (step.component) {
         parsedStep.component = {
           name: step.component.name || step.component,
-          props: step.component.props || {}
+          props: step.component.props || {},
         };
       }
 
@@ -176,7 +187,7 @@ export class ArchieMLParser {
       if (step.transition) {
         parsedStep.transition = {
           duration: step.transition.duration || 800,
-          ease: step.transition.ease || 'ease-out'
+          ease: step.transition.ease || 'ease-out',
         };
       }
 
@@ -222,7 +233,7 @@ export class ArchieMLParser {
         }
         currentStep = {
           id: line.substring(3).trim(),
-          type: 'text'
+          type: 'text',
         };
       } else if (currentStep && line.includes(':')) {
         const [key, ...valueParts] = line.split(':');
@@ -259,7 +270,11 @@ export class ArchieMLParser {
   /**
    * Parse individual step property from raw text
    */
-  private parseStepProperty(step: Partial<StoryStep>, key: string, value: string): void {
+  private parseStepProperty(
+    step: Partial<StoryStep>,
+    key: string,
+    value: string
+  ): void {
     switch (key) {
       case 'type':
         step.type = value as StoryStep['type'];
@@ -276,7 +291,10 @@ export class ArchieMLParser {
           step.map.center = JSON.parse(value);
         } catch (e) {
           // Handle string format like "[28.9784, 41.0082]"
-          const coords = value.replace(/[\[\]]/g, '').split(',').map(s => parseFloat(s.trim()));
+          const coords = value
+            .replace(/[\[\]]/g, '')
+            .split(',')
+            .map((s) => parseFloat(s.trim()));
           if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
             step.map.center = coords as [number, number];
           }
@@ -325,14 +343,14 @@ export class ArchieMLParser {
     if (typeof media === 'string') {
       return {
         type: this.detectMediaType(media),
-        src: media
+        src: media,
       };
     }
-    
+
     return {
       type: media.type || this.detectMediaType(media.src),
       src: media.src,
-      caption: media.caption
+      caption: media.caption,
     };
   }
 
@@ -365,7 +383,10 @@ export class ArchieMLParser {
         hasMapData = true;
       } catch (e) {
         // Handle string format like "[28.9784, 41.0082]"
-        const coords = step['map.center'].replace(/[\[\]]/g, '').split(',').map((s: string) => parseFloat(s.trim()));
+        const coords = step['map.center']
+          .replace(/[\[\]]/g, '')
+          .split(',')
+          .map((s: string) => parseFloat(s.trim()));
         if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
           parsed.center = coords as [number, number];
           hasMapData = true;
@@ -390,12 +411,18 @@ export class ArchieMLParser {
 
     // Handle layers and markers if present
     if (step['map.layers']) {
-      parsed.layers = Array.isArray(step['map.layers']) ? step['map.layers'] : [step['map.layers']];
+      parsed.layers =
+        Array.isArray(step['map.layers']) ?
+          step['map.layers']
+        : [step['map.layers']];
       hasMapData = true;
     }
 
     if (step['map.markers']) {
-      parsed.markers = Array.isArray(step['map.markers']) ? step['map.markers'] : [step['map.markers']];
+      parsed.markers =
+        Array.isArray(step['map.markers']) ?
+          step['map.markers']
+        : [step['map.markers']];
       hasMapData = true;
     }
 
@@ -409,7 +436,10 @@ export class ArchieMLParser {
     const parsed: StoryStep['map'] = {};
 
     if (map.center) {
-      parsed.center = Array.isArray(map.center) ? map.center : [map.center.lng, map.center.lat];
+      parsed.center =
+        Array.isArray(map.center) ?
+          map.center
+        : [map.center.lng, map.center.lat];
     }
 
     if (map.zoom !== undefined) parsed.zoom = map.zoom;
@@ -434,14 +464,14 @@ export class ArchieMLParser {
     if (typeof chart === 'string') {
       return {
         type: 'auto',
-        data: chart
+        data: chart,
       };
     }
 
     return {
       type: chart.type || 'auto',
       data: chart.data,
-      props: chart.props || {}
+      props: chart.props || {},
     };
   }
 }

@@ -1,0 +1,8 @@
+{
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist",
+  "framework": "sveltekit",
+  "env": {
+    "VITE_MAPBOX_TOKEN": "pk.eyJ1Ijoic2Nyb2xsaSIsImEiOiJjbHE0NjRyMjAwMXF2Mm1udmVuajcxZXMzIn0.7B_-qv4yez-sXAhdGrQ0wA"
+  }
+}

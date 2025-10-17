@@ -4,9 +4,9 @@
   import ScrollytellingEngine from '$lib/scrollytelling/ScrollytellingEngine.svelte';
   import MapboxMap from '$lib/components/charts/MapboxMap.svelte';
   import YearlyTrendChart from '$lib/components/charts/YearlyTrendChart.svelte';
-  import WeeklyDistributionChart from '$lib/components/charts/WeeklyDistributionChart.svelte';
+  import TableBarChart from '$lib/components/charts/TableBarChart.svelte';
+  import MetroMonthlyLineChart from '$lib/components/charts/MetroMonthlyLineChart.svelte';
   import MarmarayLineChart from '$lib/components/charts/MarmarayLineChart.svelte';
-  import MetroMonthlyChart from '$lib/components/charts/MetroMonthlyChart.svelte';
   import InteractiveWordCloud from '$lib/components/charts/InteractiveWordCloud.svelte';
   import EuropeanSuicideChart from '$lib/components/charts/EuropeanSuicideChart.svelte';
   import DurkheimTheoryChart from '$lib/components/charts/DurkheimTheoryChart.svelte';
@@ -185,35 +185,63 @@
       id: 'step-18.1',
       type: 'chart',
       headline: 'DÜNYA ÖRNEKLERİ: METRO GÜVENLİĞİNDE BAŞARILI UYGULAMALAR',
-      text: 'Dünyanın farklı metropollerinde tren hatlarında yaşanan intihar vakalarıyla ilgili net bir veri yok. Ancak çözüm önerilerine ulaşmak mümkün. Tokyo, Londra, Seul ve Paris gibi büyük metropoller, farklı yaklaşımlarla bu soruna çözüm üretmeye çalışıyor.',
+      text: 'Dünyanın farklı metropollerinde tren hatlarında yaşanan intihar vakalarıyla ilgili net bir veri yok. Ancak çözüm önerilerine ulaşmak mümkün. Singapur, Tokyo, Londra, Seul, Paris, Toronto, Berlin ve Amsterdam gibi büyük metropoller, farklı yaklaşımlarla bu soruna çözüm üretmeye çalışıyor.',
       visual: 'global-solutions',
     },
     {
       id: 'step-18.2',
       type: 'text',
-      headline: 'TOKYO: TEKNOLOJİ VE PSİKOLOJİ BİRLEŞİMİ',
-      text: 'Japonya, dünyada en yüksek intihar oranlarına sahip ülkelerden biri. Tokyo metrosu, bu sorunla mücadelede en kapsamlı yaklaşımı sergiliyor.',
+      headline: 'SİNGAPUR: DÜNYANIN İLK PLATFORM KAPISI SİSTEMİ',
+      text: '1987 yılında Raffles Place istasyonunda dünyanın ilk platform kapısı sistemini uygulayan Singapur, bu alanda öncü oldu. %100 etkinlik oranıyla tamamen başarılı olan sistem, diğer Asya şehirlerine model oldu.',
       visual: 'global-solutions',
     },
     {
       id: 'step-18.3',
       type: 'text',
-      headline: 'LONDRA: FİZİKSEL VE EĞİTİMSEL ÇÖZÜMLER',
-      text: 'Londra metrosu, hem fiziksel hem de eğitimsel yaklaşımlarla soruna çözüm üretiyor.',
+      headline: 'TOKYO: TEKNOLOJİ VE PSİKOLOJİ BİRLEŞİMİ',
+      text: "Japonya, dünyada en yüksek intihar oranlarına sahip ülkelerden biri. Tokyo metrosu, platform kapıları ve mavi LED ışıklar gibi teknolojik çözümlerle bu sorunla mücadelede en kapsamlı yaklaşımı sergiliyor. 2017'de 882 istasyona kurulum planlandı, 2031'de tam kapsama hedefleniyor.",
       visual: 'global-solutions',
     },
     {
       id: 'step-18.4',
       type: 'text',
-      headline: 'SEUL: TAM KAPALI SİSTEM VE VERİ TEMELLİ YAKLAŞIM',
-      text: 'Güney Kore, intihar önleme konusunda en sistematik yaklaşımı sergiliyor.',
+      headline: 'LONDRA: FİZİKSEL VE EĞİTİMSEL ÇÖZÜMLER',
+      text: "Londra metrosu, 1919'dan beri ray altı çukur sistemi kullanıyor. Hem fiziksel hem de eğitimsel yaklaşımlarla soruna çözüm üretiyor. Personel eğitimi ve CCTV sistemleri ile desteklenen çözümler uygulanıyor.",
       visual: 'global-solutions',
     },
     {
       id: 'step-18.5',
       type: 'text',
+      headline: 'SEUL: TAM KAPALI SİSTEM VE VERİ TEMELLİ YAKLAŞIM',
+      text: "Güney Kore, 2009'da tam platform kapısı sistemini tamamladı. Mavi LED ışıklar ve AI destekli güvenlik sistemleri ile intihar önleme konusunda en sistematik yaklaşımı sergiliyor.",
+      visual: 'global-solutions',
+    },
+    {
+      id: 'step-18.6',
+      type: 'text',
       headline: 'PARİS: OTOMATİK SİSTEMLER VE SOSYAL DESTEK',
-      text: 'Paris metrosu, özellikle otomatik sürücüsüz hatlarda uzun süredir platform kapıları kullanıyor.',
+      text: 'Paris metrosu, özellikle otomatik sürücüsüz hatlarda uzun süredir platform kapıları kullanıyor. SOS Amitié yardım hattı ve istasyonlardaki bilgilendirici tabelalar ile sosyal destek sağlıyor.',
+      visual: 'global-solutions',
+    },
+    {
+      id: 'step-18.7',
+      type: 'text',
+      headline: 'TORONTO: YAPAY ZEKA DESTEKLİ İZLEME SİSTEMİ',
+      text: "Toronto Transit Commission, 2019'da York Mills istasyonunda yapay zeka destekli izleme sistemi uyguladı. Personel eğitimi ile birlikte erken müdahale için kritik bir çözüm sunuyor.",
+      visual: 'global-solutions',
+    },
+    {
+      id: 'step-18.8',
+      type: 'text',
+      headline: 'BERLİN: RAY ALTI ÇUKUR SİSTEMİ',
+      text: "Berlin'de 1995'ten beri Alexanderplatz istasyonunda ray altı çukur sistemi uygulanıyor. Uzun vadeli etkinlik verileri mevcut ve CCTV sistemleri ile destekleniyor.",
+      visual: 'global-solutions',
+    },
+    {
+      id: 'step-18.9',
+      type: 'text',
+      headline: 'AMSTERDAM: YARDIM HATTI VE TABELA SİSTEMİ',
+      text: "Amsterdam Centraal istasyonunda 2018'de yardım hattı ve bilgilendirici tabelalar uygulandı. Hollanda ruh sağlığı hizmetleri ile entegre çalışan sistem, düşük maliyetli bir çözüm sunuyor.",
       visual: 'global-solutions',
     },
     {
@@ -267,7 +295,7 @@
     },
     {
       id: 'step-26',
-      type: 'text',
+      type: 'expert-opinion',
       headline:
         'Uzman Görüşü: "Her intihar davranışı öncelikle bir yardım çığlığıdır"',
       text: 'Türkiye Psikiyatri Derneği Krize Müdahale ve İntiharı Önleme Çalışma Birimi Üyesi Doç. Dr. Yunus Hacımusalar\'a göre, intihar düşüncesi olan birinin yönteme erişim kolaylığı, riski ciddi şekilde artırıyor. Tren ve metro gibi alanların intihar aracı olarak kullanılmasının nedenlerinden birinin de bu olduğunu söyleyen Hacımusalar, "Bir yönteme ulaşmak ne kadar kolaysa bu risk de o kadar artar. Ayrıca kişinin intihar yöntemiyle ilgili ayrıntılı planlar yapması ve yoğun düşünceler, kişinin hayatta kalma ihtimalini en aza indiren yöntemi seçmesine neden olabilir" dedi.\n\nHacımusalar\'a göre intihar, her şeyden önce bir yardım çığlığı olarak değerlendirilmeli: "İntihar; kişinin içinde bulunduğu ruhsal, sosyal, çevresel ve/veya ekonomik gibi stres olaylarıyla baş edemediğini ve yardıma ihtiyacı olduğunu gösteren bir halk sağlığı sorunudur. Bu eylemlere özenilebilecek anlamlar yüklemek, kişiye özel bir statü kazandırmak veya sorunun çözüm yollarından biri olarak sunmak son derece sakıncalıdır. Bu, intihar davranışının bulaşıcılığını artırabilir."\n\nHacımusalar, Marmaray yönetiminin yaşanan olayları "intihar" yerine "üzücü bir olay" şeklinde duyurmasını da değerlendirdi. İntihar haberlerinin hazırlanış biçiminin büyük önem taşıdığını söyleyen Hacımusalar, "İntihar haberleri, kaybedilen kişinin yakınları ile kendine zarar verme düşüncesi olan kişiler ve toplumda farklı etkiler yaratır. Bu nedenle haberlerin sunumunda insani, etik ve psikiyatrik ilkeler gözetilmeli. Haberin okunma oranını artırmaya yönelik unsurlar, intihar gibi özel konularda ciddi ve geri dönüşü olmayan zararlar doğurabilir" dedi.',
@@ -297,6 +325,8 @@
   // Video step fade transition state
   let videoStepVisible = false;
   let fadeTimeout: ReturnType<typeof setTimeout> | null = null;
+  let videoLoading = false;
+  let videoError = false;
 
   // Animated line state for step 5-1
   let lineProgress = 0;
@@ -315,6 +345,8 @@
   let durkheimProgress = 0;
   // Global solutions swarm progress for steps 18.1–18.5
   let globalSolutionsProgress = 0;
+  // Expert opinion section reveal progress for step 26
+  let expertOpinionProgress = 0;
   // Align behavior with weekly bars: start partially visible, animate smoothly
   function metroProgressShifted(p: number) {
     const start = 0.15;
@@ -328,6 +360,35 @@
     const k = 1 - start; // keep final at 100% without speeding up
     const val = start + k * Math.max(0, Math.min(1, p || 0));
     return Math.max(0, Math.min(1, val));
+  }
+
+  // Cubic-bezier easing function (ease-in-out)
+  function cubicEase(t: number): number {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  function startMetroAnimation() {
+    metroAnimationStart = null;
+
+    function animate(timestamp: number) {
+      if (!metroAnimationStart) metroAnimationStart = timestamp;
+
+      const elapsed = timestamp - metroAnimationStart;
+      const rawProgress = Math.min(elapsed / METRO_ANIMATION_DURATION, 1);
+
+      // Apply cubic-bezier easing
+      const easedProgress = cubicEase(rawProgress);
+      metroMonthlyProgress = easedProgress;
+
+      if (rawProgress < 1) {
+        metroAnimationFrame = requestAnimationFrame(animate);
+      } else {
+        metroMonthlyProgress = 1; // Ensure we end at exactly 1
+        metroAnimationFrame = null;
+      }
+    }
+
+    metroAnimationFrame = requestAnimationFrame(animate);
   }
 
   onMount(async () => {
@@ -357,6 +418,9 @@
   });
 
   let metroEnterTimer: ReturnType<typeof setTimeout> | null = null;
+  let metroAnimationFrame: number | null = null;
+  let metroAnimationStart: number | null = null;
+  const METRO_ANIMATION_DURATION = 2500; // 2.5 seconds for smooth animation
 
   function handleStepEnter(event: CustomEvent) {
     currentStepIndex = event.detail.index;
@@ -372,24 +436,28 @@
       );
     }
 
-    // Handle transition from step 18.5 to step 19
+    // Handle transition from step 18.9 to step 19
     if (currentStep?.id === 'step-19') {
       // Trigger seamless bubble transition
       import('$lib/stores/chartTransition').then(({ startTransition }) => {
         console.log('🎬 Triggering seamless transition to step-19');
-        startTransition('step-18.5', 'step-19', []);
+        startTransition('step-18.9', 'step-19', []);
       });
     }
 
     // Handle video step fade transitions
     if (currentStep?.type === 'video') {
       videoStepVisible = false; // Start hidden
+      videoLoading = true;
+      videoError = false;
       if (fadeTimeout) clearTimeout(fadeTimeout);
       fadeTimeout = setTimeout(() => {
         videoStepVisible = true; // Fade in after brief delay
       }, 200);
     } else {
       videoStepVisible = false; // Hide for non-video steps
+      videoLoading = false;
+      videoError = false;
       if (fadeTimeout) clearTimeout(fadeTimeout);
     }
 
@@ -398,14 +466,20 @@
     if (currentStep?.id !== 'step-9-1') weeklyProgress = 0;
     if (currentStep?.id !== 'step-14-1') {
       if (metroEnterTimer) clearTimeout(metroEnterTimer);
+      if (metroAnimationFrame) cancelAnimationFrame(metroAnimationFrame);
       metroMonthlyProgress = 0;
+      metroAnimationStart = null;
     } else {
-      // Kick-start progress so bars are visible even if progress event is delayed
-      metroMonthlyProgress = 0.001;
+      // Start smooth cubic-ease animation for step 14-1
       if (metroEnterTimer) clearTimeout(metroEnterTimer);
+      if (metroAnimationFrame) cancelAnimationFrame(metroAnimationFrame);
+      metroMonthlyProgress = 0;
+      metroAnimationStart = null;
+
+      // Delay animation start slightly for better viewport entrance
       metroEnterTimer = setTimeout(() => {
-        metroMonthlyProgress = 1;
-      }, 150);
+        startMetroAnimation();
+      }, 300);
     }
     // Don't reset europeanProgress for step-19 to maintain state
     if (currentStep?.id !== 'step-19' && currentStep?.id !== 'step-20') {
@@ -428,6 +502,8 @@
 
     // Reset global solutions progress when leaving global solutions steps
     if (!isGlobalSolutionsStep(currentStep?.id)) globalSolutionsProgress = 0;
+    // Reset expert opinion progress when leaving step 26
+    if (currentStep?.id !== 'step-26') expertOpinionProgress = 0;
   }
 
   function handleStepProgress(event: CustomEvent) {
@@ -441,12 +517,8 @@
     if (stepId === 'step-9-1') {
       weeklyProgress = event.detail.progress;
     }
-    // Animate metro monthly bars for step 14-1 based on scroll progress
-    if (stepId === 'step-14-1') {
-      const maybe = event.detail?.progress;
-      const progress = maybe == null ? 1 : Math.min(1, Math.max(0, maybe));
-      metroMonthlyProgress = Math.max(metroMonthlyProgress, progress);
-    }
+    // Step 14-1 uses auto-animation on entrance, not scroll-based progress
+    // So we skip updating metroMonthlyProgress here to let the animation run smoothly
     // Animate European data chart for step 19
     if (stepId === 'step-19') {
       const progress = event.detail.progress || 0;
@@ -476,6 +548,10 @@
       ].includes(stepId)
     ) {
       durkheimProgress = event.detail.progress || 0;
+    }
+    // Animate expert opinion section reveal for step 26
+    if (stepId === 'step-26') {
+      expertOpinionProgress = event.detail.progress || 0;
     }
   }
 
@@ -552,7 +628,7 @@
   // Workaround typing on Block requiring children; render dynamically
   const BlockAny: any = Block;
 
-  const globalSolutionsIdPattern = /^step-18[.\-][1-5]$/;
+  const globalSolutionsIdPattern = /^step-18[.\-][1-9]$/;
 
   function isGlobalSolutionsStep(id: string | undefined | null): boolean {
     return typeof id === 'string' && globalSolutionsIdPattern.test(id);
@@ -615,6 +691,22 @@
             <p class="video-description">{@html step.text}</p>
           {/if}
         </div>
+      {:else if step.type === 'expert-opinion'}
+        <div
+          class="expert-opinion-container"
+          style="opacity: {Math.max(0.3, expertOpinionProgress)}; 
+                    filter: blur({Math.max(
+            0,
+            3 - expertOpinionProgress * 3
+          )}px);"
+        >
+          {#if step.headline}
+            <h2 class="expert-title">{step.headline}</h2>
+          {/if}
+          {#if step.text}
+            <div class="expert-text">{@html step.text}</div>
+          {/if}
+        </div>
       {:else}
         <div class="step-content" class:active>
           {#if step.headline}
@@ -639,33 +731,53 @@
         {#if currentStep.type === 'video'}
           <div class="video-frame {currentStep.align || 'center'}">
             <video
-              key="{currentStep.id}-{currentStep.videoSrc}"
               autoplay
               muted
               playsinline
               loop
               preload="metadata"
-              on:error={(e) => console.error('Video error:', e)}
-              on:loadstart={() =>
+              src={currentStep.videoSrc}
+              on:error={(e) => {
+                console.error('Video error:', e);
+                videoError = true;
+                videoLoading = false;
+              }}
+              on:loadstart={() => {
                 console.log(
                   'Video loading:',
                   currentStep.videoSrc,
                   'for step:',
                   currentStep.id
-                )}
-              on:canplay={() =>
+                );
+                videoLoading = true;
+                videoError = false;
+              }}
+              on:canplay={() => {
                 console.log(
                   'Video can play:',
                   currentStep.videoSrc,
                   'for step:',
                   currentStep.id
-                )}
+                );
+                videoLoading = false;
+                videoError = false;
+              }}
+              on:loadeddata={() => {
+                videoLoading = false;
+              }}
             >
-              {#if currentStep.videoSrc}
-                <source src={currentStep.videoSrc} type="video/mp4" />
-              {/if}
               Your browser does not support the video tag.
             </video>
+            {#if videoLoading}
+              <div class="video-loading">
+                <div class="loading-spinner"></div>
+              </div>
+            {/if}
+            {#if videoError}
+              <div class="video-error">
+                <p>Video could not be loaded</p>
+              </div>
+            {/if}
           </div>
         {:else if currentStep.visual === 'yearly-trend' || currentStep.visual === 'yearly-analysis'}
           <div class="chart-container">
@@ -688,8 +800,11 @@
         {:else if currentStep.visual === 'weekly-distribution'}
           <div class="chart-container">
             {#if dataLoaded && marmarayData.weekly}
-              <WeeklyDistributionChart
-                data={marmarayData.weekly}
+              <TableBarChart
+                data={marmarayData.weekly.map((item) => ({
+                  category: item.Gün,
+                  value: item.Vaka,
+                }))}
                 width={600}
                 height={400}
                 title="Günlere Göre Dağılım"
@@ -700,14 +815,16 @@
             {/if}
           </div>
         {:else if currentStep.visual === 'station-heatmap'}
-          <MarmarayLineChart
-            width={900}
-            height={500}
-            showIncidents={true}
-            highlightStations={currentStep.id === 'step-12-3' ?
-              ['Yenikapı', 'Bostancı', 'Ayrılık Çeşmesi']
-            : []}
-          />
+          <div class="marmaray-chart-wrapper">
+            <MarmarayLineChart
+              width={800}
+              height={400}
+              showIncidents={true}
+              highlightStations={currentStep.id === 'step-12-3' ?
+                ['Yenikapı', 'Bostancı', 'Ayrılık Çeşmesi']
+              : []}
+            />
+          </div>
         {:else if currentStep.visual === 'communication-timeline'}
           <div class="chart-container communication-chart-container">
             <!-- Interactive Word Cloud -->
@@ -716,12 +833,12 @@
         {:else if currentStep.visual === 'metro-monthly'}
           <div class="chart-container">
             {#if dataLoaded && metroData.monthly?.length}
-              <MetroMonthlyChart
+              <MetroMonthlyLineChart
                 data={metroData.monthly}
-                width={600}
-                height={400}
+                width={520}
+                height={280}
                 title="Metro İstanbul'da aylara göre vakalar"
-                animationProgress={currentStep.id === 'step-14-1' ?
+                progress={currentStep.id === 'step-14-1' ?
                   metroProgressShifted(metroMonthlyProgress)
                 : 1}
               />
@@ -768,15 +885,23 @@
                 height={420}
                 stepId={currentStep.id}
                 data={globalSolutionsData}
-                cityFilter={currentStep.id === 'step-18.2' ? 'Tokyo'
-                : currentStep.id === 'step-18.3' ? 'London'
-                : currentStep.id === 'step-18.4' ? 'Seoul'
-                : currentStep.id === 'step-18.5' ? 'Paris'
+                cityFilter={currentStep.id === 'step-18.2' ? 'Singapore'
+                : currentStep.id === 'step-18.3' ? 'Tokyo'
+                : currentStep.id === 'step-18.4' ? 'London'
+                : currentStep.id === 'step-18.5' ? 'Seoul'
+                : currentStep.id === 'step-18.6' ? 'Paris'
+                : currentStep.id === 'step-18.7' ? 'Toronto'
+                : currentStep.id === 'step-18.8' ? 'Berlin'
+                : currentStep.id === 'step-18.9' ? 'Amsterdam'
                 : null}
-                highlightedCity={currentStep.id === 'step-18.2' ? 'Tokyo'
-                : currentStep.id === 'step-18.3' ? 'London'
-                : currentStep.id === 'step-18.4' ? 'Seoul'
-                : currentStep.id === 'step-18.5' ? 'Paris'
+                highlightedCity={currentStep.id === 'step-18.2' ? 'Singapore'
+                : currentStep.id === 'step-18.3' ? 'Tokyo'
+                : currentStep.id === 'step-18.4' ? 'London'
+                : currentStep.id === 'step-18.5' ? 'Seoul'
+                : currentStep.id === 'step-18.6' ? 'Paris'
+                : currentStep.id === 'step-18.7' ? 'Toronto'
+                : currentStep.id === 'step-18.8' ? 'Berlin'
+                : currentStep.id === 'step-18.9' ? 'Amsterdam'
                 : null}
               />
             {:else}
@@ -929,8 +1054,8 @@
     padding: 2rem 0;
     min-height: 60vh;
     display: flex;
-    align-items: flex-start;
-    padding-top: 4rem;
+    align-items: center;
+    padding-top: 2rem;
   }
 
   .step-content {
@@ -973,16 +1098,19 @@
   .graphic-container {
     position: sticky;
     top: 2rem;
-    height: calc(100vh - 4rem);
+    min-height: calc(100vh - 4rem);
+    height: auto; /* Allow height to expand */
     display: flex;
-    align-items: center;
+    align-items: center; /* Center align to prevent viewport overflow */
     justify-content: center;
+    padding-bottom: 2rem; /* Add bottom padding */
   }
 
   .video-frame {
     width: 100%;
     display: flex;
     align-items: center;
+    position: relative;
   }
   .video-frame.left {
     justify-content: flex-start;
@@ -998,6 +1126,55 @@
     border-radius: 12px;
     background: #000;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    transition:
+      transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.3s ease-out;
+    transform-origin: center;
+    will-change: transform;
+  }
+
+  /* Smooth alignment transitions */
+  .video-frame.left video {
+    transform: translateX(-10px);
+  }
+  .video-frame.center video {
+    transform: translateX(0);
+  }
+  .video-frame.right video {
+    transform: translateX(10px);
+  }
+
+  /* Video loading and error states */
+  .video-loading,
+  .video-error {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+  }
+
+  .video-loading {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .video-error {
+    background: rgba(220, 38, 38, 0.9);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .video-error p {
+    margin: 0;
+    font-size: 0.9rem;
   }
 
   .video-caption {
@@ -1142,11 +1319,15 @@
 
   .chart-container {
     width: 100%;
-    height: 100%;
+    min-height: 100%; /* Use min-height instead of fixed height */
+    height: auto; /* Allow height to expand */
     padding: 0.5rem 0; /* minimal padding */
     background: transparent; /* no box background */
     border-radius: 0; /* naked */
     box-shadow: none; /* remove shadow */
+    display: flex;
+    align-items: center; /* center align to prevent viewport overflow */
+    justify-content: center;
   }
 
   .metro-monthly-wrapper {
@@ -1160,6 +1341,16 @@
     justify-content: center;
     padding-top: 3rem; /* Move chart down */
     padding-bottom: 2rem;
+  }
+
+  .marmaray-chart-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 2rem; /* Reduced padding to prevent viewport overflow */
+    padding-bottom: 2rem;
+    width: 100%;
+    height: 100%;
   }
 
   /* removed unused marmaray-chart-container h3 styles */
@@ -1420,5 +1611,35 @@
     line-height: 1.7;
     color: #374151;
     margin: 0;
+  }
+
+  /* Expert Opinion Section Reveal Effect */
+  .expert-opinion-container {
+    max-width: 500px;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(8px);
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-left: auto;
+    margin-top: 0;
+  }
+
+  .expert-title {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 1rem;
+    line-height: 1.3;
+  }
+
+  .expert-text {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #4a5568;
   }
 </style>

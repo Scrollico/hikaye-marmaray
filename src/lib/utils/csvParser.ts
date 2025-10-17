@@ -42,7 +42,7 @@ export function parseCSV(text: string): CSVRow[] {
 export async function loadCSV(filename: string): Promise<CSVRow[]> {
   try {
     console.log(`Loading CSV file: ${filename}`);
-    const response = await fetch(`/media-assets/graphics-table/${filename}`);
+    const response = await fetch(`/graphics-table/${filename}`);
     if (!response.ok) {
       throw new Error(`Failed to load ${filename}: ${response.statusText}`);
     }

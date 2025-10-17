@@ -24,19 +24,27 @@
   let svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
   let simulation: d3.Simulation<Node, undefined>;
 
-  // Country color palette
+  // Country color palette - expanded for all 9 cities
   const COUNTRY_COLORS: Record<string, string> = {
+    Singapore: '#f39c12', // Singapore Orange
     Tokyo: '#e74c3c', // Japan Red
     London: '#2c3e50', // UK Dark Blue
     Seoul: '#3498db', // Korea Blue
     Paris: '#9b59b6', // France Purple
+    Toronto: '#e67e22', // Canada Orange
+    Berlin: '#34495e', // Germany Dark Gray
+    Amsterdam: '#8e44ad', // Netherlands Purple
   };
 
   const COUNTRY_NAMES: Record<string, string> = {
+    Singapore: 'Singapur',
     Tokyo: 'Tokyo',
     London: 'Londra',
     Seoul: 'Seul',
     Paris: 'Paris',
+    Toronto: 'Toronto',
+    Berlin: 'Berlin',
+    Amsterdam: 'Amsterdam',
   };
 
   type MeasureType = 'door' | 'pit' | 'led' | 'training' | 'helpline';
@@ -50,6 +58,9 @@
     vx?: number;
     vy?: number;
     radius: number;
+    effectiveness: number; // Store effectiveness percentage
+    year: number;
+    station: string;
   };
 
   let nodes: Node[] = [];
@@ -60,6 +71,11 @@
     x2: number;
     y2: number;
   }> = [];
+
+  // Hover state for showing details
+  let hoveredNode: Node | null = null;
+  let mouseX = 0;
+  let mouseY = 0;
 
   // Three-tiered size system (üç kademeli)
   // Small, Medium, Large categories with clear size gaps
@@ -72,30 +88,41 @@
       helpline: { base: 5, variation: 1 }, // MEDIUM - Helpline
     };
 
-  // Multi-centroid layout: cluster per country for clearer structure
+  // Multi-centroid layout: cluster per country for clearer structure - now supports all 9 cities
   function getCountryCenters(w: number, h: number) {
     const padX = 80;
     const padY = 60;
     const innerW = w - padX * 2;
     const innerH = h - padY * 2;
-    const columns = 2;
-    const rows = 2;
+    const columns = 3; // Increased to 3 columns for 9 cities
+    const rows = 3; // 3 rows for 9 cities
     const cellW = innerW / columns;
     const cellH = innerH / rows;
-    const order: string[] = ['Tokyo', 'London', 'Seoul', 'Paris'];
+    // Order all 9 cities in a logical layout
+    const order: string[] = [
+      'Singapore',
+      'Tokyo',
+      'Seoul', // Top row
+      'London',
+      'Paris',
+      'Berlin', // Middle row
+      'Toronto',
+      'Amsterdam',
+      'Singapore', // Bottom row (Singapore appears twice - will be handled)
+    ];
     const centers: Record<
       string,
       { x: number; y: number; col: number; row: number }
     > = {} as any;
-    order.forEach((city, i) => {
+
+    // Track unique cities
+    const uniqueCities = [...new Set(order)];
+
+    uniqueCities.forEach((city, i) => {
       const row = Math.floor(i / columns);
       const col = i % columns;
       const cx = padX + col * cellW + cellW / 2;
-      const cy =
-        padY +
-        row * cellH +
-        cellH / 2 +
-        (row === rows - 1 && order.length < columns * rows ? 20 : 0);
+      const cy = padY + row * cellH + cellH / 2;
       centers[city] = { x: cx, y: cy, col, row };
     });
     return centers;
@@ -139,10 +166,14 @@
 
   const sceneNames: Record<string, string> = {
     'step-18.1': 'Genel Bakış',
-    'step-18.2': 'Tokyo',
-    'step-18.3': 'Londra',
-    'step-18.4': 'Seul',
-    'step-18.5': 'Paris',
+    'step-18.2': 'Singapur',
+    'step-18.3': 'Tokyo',
+    'step-18.4': 'Londra',
+    'step-18.5': 'Seul',
+    'step-18.6': 'Paris',
+    'step-18.7': 'Toronto',
+    'step-18.8': 'Berlin',
+    'step-18.9': 'Amsterdam',
   };
 
   type SceneKey = keyof typeof sceneNames;
@@ -168,8 +199,8 @@
     }));
   }
 
-  // Handle transition to step 19
-  $: if (stepId === 'step-18.5') {
+  // Handle transition to step 19 - updated for new last step
+  $: if (stepId === 'step-18.9') {
     // Prepare for transition when reaching the last step
     const bubbles = prepareTransitionBubbles();
     console.log(
@@ -183,19 +214,28 @@
   }
 
   function buildNodesFromData(rows: GlobalSolutionRow[]): Node[] {
-    // Filter to only show the 4 main cities
-    const allowedCities = ['Tokyo', 'London', 'Seoul', 'Paris'];
+    // Now include all 9 cities instead of filtering to just 4
+    const allowedCities = [
+      'Singapore',
+      'Tokyo',
+      'London',
+      'Seoul',
+      'Paris',
+      'Toronto',
+      'Berlin',
+      'Amsterdam',
+    ];
     const filtered = rows.filter((row) => allowedCities.includes(row.city));
 
     // Expand each row into many micro-nodes to create a dense swarm
     // Base nodes per row; scaled by absolute change (bigger improvement → more nodes)
-    const BASE_PER_ROW = 24;
+    const BASE_PER_ROW = 20; // Slightly reduced since we have more cities
     const nodesOut: Node[] = [];
     let nid = 0;
     filtered.forEach((r) => {
       const mag = Math.min(100, Math.abs(Number(r.change) || 0));
       const scale = 0.8 + mag / 100; // 0.8–1.8
-      const count = Math.max(8, Math.round(BASE_PER_ROW * scale));
+      const count = Math.max(6, Math.round(BASE_PER_ROW * scale)); // Reduced minimum
       for (let k = 0; k < count; k++) {
         nodesOut.push({
           id: nid++,
@@ -203,33 +243,38 @@
           city: r.city,
           x: Math.random() * width,
           y: Math.random() * height,
-          radius: calculateNodeRadius(r.type as MeasureType),
+          radius: calculateNodeRadius(
+            r.type as MeasureType,
+            Math.abs(Number(r.change) || 0)
+          ),
+          effectiveness: Math.abs(Number(r.change) || 0),
+          year: Number(r.year) || 2000,
+          station: r.station || 'Unknown',
         });
       }
     });
     return nodesOut;
   }
 
-  function calculateNodeRadius(type: MeasureType): number {
+  function calculateNodeRadius(
+    type: MeasureType,
+    effectiveness?: number
+  ): number {
     const config = SIZE_CONFIG[type];
 
-    // Create mixed sizes within each type with subtle differences
-    // 30% chance for each size tier regardless of type
-    const sizeRoll = Math.random();
-    let targetSize: number;
+    // Base size from type
+    let baseSize = config.base;
 
-    if (sizeRoll < 0.3) {
-      // Small tier - subtle
-      targetSize = 3 + Math.random() * 1; // 3-4px
-    } else if (sizeRoll < 0.6) {
-      // Medium tier - subtle
-      targetSize = 4.5 + Math.random() * 1; // 4.5-5.5px
-    } else {
-      // Large tier - subtle
-      targetSize = 6 + Math.random() * 1.5; // 6-7.5px
+    // Scale by effectiveness if provided (more effective = larger)
+    if (effectiveness !== undefined) {
+      baseSize = baseSize * (0.7 + effectiveness / 100); // 0.7x to 1.7x based on effectiveness
     }
 
-    return Math.max(1, targetSize);
+    // Add some randomness
+    const variation = config.variation;
+    const finalSize = baseSize + (Math.random() - 0.5) * variation;
+
+    return Math.max(1, finalSize);
   }
 
   function assignData(sceneKey: SceneKey) {
@@ -361,9 +406,61 @@
         if (highlightedCity && d.city !== highlightedCity) return 0.3;
         return 0.85;
       })
-      .style('transition', 'fill 0.3s ease, opacity 0.3s ease');
+      .style('transition', 'fill 0.3s ease, opacity 0.3s ease')
+      .on('mouseover', function (event, d) {
+        hoveredNode = d;
+        mouseX = event.pageX;
+        mouseY = event.pageY;
+        // Highlight this node
+        d3.select(this)
+          .attr('opacity', 1)
+          .attr('r', d.radius * 1.3);
+      })
+      .on('mouseout', function (event, d) {
+        hoveredNode = null;
+        // Restore opacity
+        const opacity =
+          highlightedCity && d.city !== highlightedCity ? 0.3 : 0.85;
+        d3.select(this).attr('opacity', opacity).attr('r', d.radius);
+      })
+      .on('mousemove', function (event) {
+        mouseX = event.pageX;
+        mouseY = event.pageY;
+      });
 
-    // No legend - country names are shown directly on the swarms
+    // Effectiveness legend
+    const legend = svg.append('g').attr('class', 'effectiveness-legend');
+    legend
+      .append('text')
+      .attr('x', width - 120)
+      .attr('y', 20)
+      .attr('font-size', '12px')
+      .attr('font-weight', '600')
+      .attr('fill', '#2c3e50')
+      .text('Etkinlik:');
+
+    // Legend items
+    const legendItems = [
+      { color: '#e74c3c', label: 'Yüksek (80%+)', range: '80-100%' },
+      { color: '#f39c12', label: 'Orta (40-79%)', range: '40-79%' },
+      { color: '#95a5a6', label: 'Düşük (<40%)', range: '<40%' },
+    ];
+
+    legendItems.forEach((item, i) => {
+      const itemGroup = legend
+        .append('g')
+        .attr('transform', `translate(${width - 120}, ${35 + i * 15})`);
+
+      itemGroup.append('circle').attr('r', 4).attr('fill', item.color);
+
+      itemGroup
+        .append('text')
+        .attr('x', 10)
+        .attr('y', 2)
+        .attr('font-size', '10px')
+        .attr('fill', '#2c3e50')
+        .text(item.range);
+    });
   }
 
   function updateScene() {
@@ -424,6 +521,39 @@
 
 <div class="swarm-wrap" style="width: {width}px; height: {height}px;">
   <svg bind:this={svgEl} class="swarm-svg"></svg>
+
+  <!-- Hover tooltip -->
+  {#if hoveredNode}
+    <div
+      class="hover-tooltip"
+      style="left: {mouseX + 10}px; top: {mouseY - 10}px;"
+    >
+      <div class="tooltip-header">
+        <strong>{COUNTRY_NAMES[hoveredNode.city]}</strong>
+        <span class="effectiveness-badge"
+          >{hoveredNode.effectiveness}% azalma</span
+        >
+      </div>
+      <div class="tooltip-content">
+        <div class="station-info">
+          {hoveredNode.station} ({hoveredNode.year})
+        </div>
+        <div class="measure-type">
+          {#if hoveredNode.type === 'door'}
+            Platform Kapısı
+          {:else if hoveredNode.type === 'pit'}
+            Ray Altı Çukur
+          {:else if hoveredNode.type === 'led'}
+            Mavi LED Işıklar
+          {:else if hoveredNode.type === 'training'}
+            Personel Eğitimi & AI
+          {:else if hoveredNode.type === 'helpline'}
+            Yardım Hattı
+          {/if}
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -453,5 +583,48 @@
   :global(.swarm-svg circle.dot:hover) {
     r: calc(var(--base-radius, 4px) * 1.5);
     opacity: 1;
+  }
+
+  .hover-tooltip {
+    position: fixed;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    z-index: 1000;
+    max-width: 200px;
+  }
+
+  .tooltip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .effectiveness-badge {
+    background: #e74c3c;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .tooltip-content {
+    color: #666;
+  }
+
+  .station-info {
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
+
+  .measure-type {
+    font-weight: 600;
+    color: #2c3e50;
   }
 </style>

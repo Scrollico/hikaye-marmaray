@@ -28,8 +28,10 @@
   ];
 
   // Calculate station positions
-  const lineStartX = 80;
-  const lineEndX = 720;
+  // Center the stations within the 800px viewBox (with 40px outer translate)
+  // Previously start/end left a bit more space on left; shift 10px left.
+  const lineStartX = 50;
+  const lineEndX = 690;
   const lineY = 200;
   const stationSpacing =
     (lineEndX - lineStartX) / (marmarayStations.length - 1);
@@ -65,7 +67,12 @@
 </script>
 
 <div class="marmaray-metro-map" style="width: {width}px; height: {height}px;">
-  <svg width="100%" height="100%" viewBox="0 0 800 400">
+  <svg
+    width="100%"
+    height="100%"
+    viewBox="0 0 {width} {height}"
+    preserveAspectRatio="xMidYMid meet"
+  >
     <defs>
       <!-- Metro map styling gradients -->
       <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -262,11 +269,11 @@
       {/each}
 
       <!-- Metro Map Legend -->
-      <g class="metro-legend" transform="translate(0, 300)">
+      <g class="metro-legend" transform="translate(0, {height * 0.75})">
         <rect
           x="0"
           y="0"
-          width="720"
+          width={width - 80}
           height="50"
           fill="#F7FAFC"
           stroke="#E2E8F0"

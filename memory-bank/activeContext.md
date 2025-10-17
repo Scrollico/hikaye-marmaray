@@ -11,6 +11,23 @@ The main focus is on developing and refining the Marmaray story (`pages/marmaray
 1. **Content Warning Alignment**: Fixed left alignment for the content warning in Step 0
 2. **Title Alignment**: Added CSS rules to force SiteHeadline component to be left-aligned
 3. **Component Structure**: Maintained proper container-component relationships
+4. **Viewport Overflow Fix**: Fixed sol taraftaki öğelerin viewport'un üstünde görünme problemi
+   - Changed `.step-container` from `align-items: flex-start` to `align-items: center`
+   - Reduced `padding-top` from `4rem` to `2rem`
+   - Changed `.graphic-container` from `align-items: flex-start` to `align-items: center`
+   - Changed `.chart-container` from `align-items: flex-start` to `align-items: center`
+   - Reduced `.marmaray-chart-wrapper` padding-top from `4rem` to `2rem`
+5. **TableBarChart Cleanup**: Cleaned up step-9-1 chart appearance
+   - Removed debug comment text from TableBarChart component
+   - Removed background shadow box (changed background to transparent, removed box-shadow)
+   - Chart now has clean, minimal appearance without white background card
+6. **Expert Opinion Section Reveal Effect**: Added progressive reveal effect to step-26
+   - Changed step type from 'text' to 'expert-opinion'
+   - Added expertOpinionProgress state tracking
+   - Implemented opacity and blur effects based on scroll progress
+   - Text starts at 30% opacity with 3px blur, becomes fully visible as user scrolls
+   - Added CSS styling for expert-opinion-container with smooth transitions
+   - Updated StoryStep type definition to include 'expert-opinion'
 
 ### Current State
 
