@@ -15,3 +15,5 @@ Read more in the **[developer docs](https://reuters-graphics.github.io/bluprint_
 ## 👀 Preview
 
 See it on ⚡[StackBlitz](https://stackblitz.com/github/reuters-graphics/bluprint_graphics-kit).
+
+# Force deployment

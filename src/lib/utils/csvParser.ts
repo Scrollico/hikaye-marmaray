@@ -164,7 +164,13 @@ function mapPreventionTypeToKey(raw: string): GlobalMeasureType | null {
 }
 
 export async function loadGlobalSolutionsData(): Promise<GlobalSolutionRow[]> {
-  const rows = await loadCSV('metro_suicide_prevention_scenario.csv');
+  // Try enriched data first, fallback to original
+  let rows;
+  try {
+    rows = await loadCSV('metro_suicide_prevention_scenario_enriched.csv');
+  } catch {
+    rows = await loadCSV('metro_suicide_prevention_scenario.csv');
+  }
   return rows
     .map((r) => {
       const type = mapPreventionTypeToKey(String(r['prevention_type'] || ''));

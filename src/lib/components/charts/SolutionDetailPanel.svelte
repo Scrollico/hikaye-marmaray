@@ -101,7 +101,7 @@
         </div>
 
         <div class="detail-item">
-          <label>Kapsam:</label>
+          <span class="detail-label">Kapsam:</span>
           <span class="scope-info">
             {stationCount} istasyon -
             <span
@@ -116,7 +116,7 @@
         </div>
 
         <div class="detail-item">
-          <label>Maliyet:</label>
+          <span class="detail-label">Maliyet:</span>
           <span
             class="cost-badge"
             style="background-color: {costColors[costEstimate]}"
