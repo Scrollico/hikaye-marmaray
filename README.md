@@ -17,3 +17,5 @@ Read more in the **[developer docs](https://reuters-graphics.github.io/bluprint_
 See it on ⚡[StackBlitz](https://stackblitz.com/github/reuters-graphics/bluprint_graphics-kit).
 
 # Force deployment
+
+# Force deployment Fri Oct 17 18:32:05 CEST 2025
