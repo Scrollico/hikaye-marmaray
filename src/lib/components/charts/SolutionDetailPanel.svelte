@@ -88,12 +88,12 @@
     <div class="panel-content">
       <div class="implementation-details">
         <div class="detail-item">
-          <label>İstasyon:</label>
+          <span class="detail-label">İstasyon:</span>
           <span>{station} ({year})</span>
         </div>
 
         <div class="detail-item">
-          <label>Önlem Türü:</label>
+          <span class="detail-label">Önlem Türü:</span>
           <div class="prevention-type-display">
             <PreventionTypeIcons type={preventionType} size={16} />
             <span>{preventionTypeNames[preventionType]}</span>
@@ -259,7 +259,7 @@
     border-bottom: none;
   }
 
-  .detail-item label {
+  .detail-label {
     font-weight: 600;
     color: #2c3e50;
     font-size: 13px;
