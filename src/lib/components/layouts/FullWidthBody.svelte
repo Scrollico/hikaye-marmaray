@@ -131,12 +131,36 @@
   }
 
   @media (max-width: 768px) {
-    .headline {
-      font-size: 26px;
+    .inner {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+      max-width: 100% !important;
     }
+
+    .headline {
+      font-size: 24px;
+      line-height: 1.3;
+      margin-bottom: 1.5rem;
+    }
+
     .body {
-      font-size: 18px;
-      line-height: 1.7;
+      font-size: 16px;
+      line-height: 1.6;
+      text-align: left; // Better readability on mobile
+    }
+
+    .body.center {
+      text-align: left; // Override center alignment on mobile
+    }
+
+    .kicker {
+      font-size: 11px;
+      margin-bottom: 0.75rem;
+    }
+
+    .byline {
+      font-size: 13px;
+      margin-bottom: 1.25rem;
     }
   }
 </style>

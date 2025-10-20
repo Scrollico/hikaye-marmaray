@@ -40,6 +40,8 @@
   export let visible: boolean = true;
   // Cinematic/3D toggles (safe defaults)
   export let enable3DBuildings: boolean = false;
+  // Mobile performance optimization
+  export let mobileOptimized: boolean = true;
   // Station-anchored pulse defs (fixed positions on specific lines)
   export let metroAnchors: Array<{
     lineId: string;
@@ -202,6 +204,22 @@
     // Create map with performance optimizations
     const init = () => {
       const safeTarget = mapConfigs && mapConfigs[target] ? target : 'istanbul';
+
+      // Mobile-specific optimizations
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+      const mobileSettings =
+        mobileOptimized && isMobile ?
+          {
+            maxZoom: 16, // Lower max zoom for mobile
+            minZoom: 4,
+            maxPitch: 45, // Lower max pitch for mobile
+            antialias: false,
+            preserveDrawingBuffer: false,
+            refreshExpiredTiles: false,
+            fadeDuration: 0,
+          }
+        : {};
+
       map = new mapboxgl.Map({
         container: mapContainer,
         style: 'mapbox://styles/scrolli/cmf6orzz701s801sdbjovdh6x',
@@ -224,6 +242,7 @@
         fadeDuration: 0, // Disable fade animations for faster loading
         crossSourceCollisions: true,
         localIdeographFontFamily: 'sans-serif', // Use system fonts for better performance
+        ...mobileSettings, // Apply mobile optimizations
         transformRequest: (url, resourceType) => {
           // Optimize tile loading
           if (resourceType === 'Tile') {

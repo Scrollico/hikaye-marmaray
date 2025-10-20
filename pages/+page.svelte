@@ -1012,6 +1012,7 @@
               highlightStations={true}
               enable3DBuildings={false}
               interactive={false}
+              mobileOptimized={true}
             />
           </div>
         {/if}
@@ -1158,6 +1159,20 @@
     @media (max-width: 768px) {
       width: 100%; // Full width on mobile
       max-width: none;
+      height: auto; // Maintain aspect ratio
+      min-height: 200px; // Ensure minimum height
+    }
+  }
+  
+  // Mobile video container improvements
+  @media (max-width: 768px) {
+    .video-frame {
+      width: 100%;
+      padding: 0 1rem; // Add padding for mobile
+      
+      &.left, &.center, &.right {
+        justify-content: center; // Center all videos on mobile
+      }
     }
   }
 
@@ -1252,6 +1267,13 @@
     border-radius: 0;
     box-shadow: none;
     z-index: 0; /* lower than header/text */
+    margin: 0;
+    padding: 0;
+    
+    @media (max-width: 768px) {
+      height: 100vh;
+      height: 100dvh; /* Use dynamic viewport height for mobile */
+    }
   }
 
   /* Split Screen Map Layout */
@@ -1265,6 +1287,12 @@
     display: flex;
     align-items: center;
     animation: splitScreenZoomIn 1.2s ease-out;
+    
+    @media (max-width: 768px) {
+      flex-direction: column; // Stack vertically on mobile
+      height: 100vh;
+      height: 100dvh; // Use dynamic viewport height
+    }
   }
 
   @keyframes splitScreenZoomIn {
@@ -1283,6 +1311,12 @@
     flex: 1;
     height: 100vh;
     position: relative;
+    
+    @media (max-width: 768px) {
+      flex: none;
+      height: 50vh; // Each map takes half the screen on mobile
+      width: 100%;
+    }
   }
 
   .split-divider {
@@ -1293,6 +1327,11 @@
     position: relative;
     box-shadow: 0 0 10px rgba(211, 47, 47, 0.5);
     animation: dividerAppear 0.8s ease-out 0.4s both;
+    
+    @media (max-width: 768px) {
+      width: 100%;
+      height: 2px; // Horizontal divider on mobile
+    }
   }
 
   @keyframes dividerAppear {
@@ -1519,19 +1558,30 @@
       grid-template-columns: 1fr;
       gap: 0.5rem;
       padding: 0 1rem;
+      display: flex;
+      flex-direction: column;
     }
 
     .graphic-container {
       position: relative;
-      height: 400px;
+      height: auto;
+      min-height: 300px;
       margin-bottom: 2rem;
       top: 0;
-      min-height: auto;
+      order: 1; // Show graphics first on mobile
+      
+      // Ensure charts are visible
+      .chart-container {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
     }
 
     .step-container {
       min-height: auto;
       padding: 1rem 0;
+      order: 2; // Show text after graphics
     }
 
     .step-content {
@@ -1548,6 +1598,17 @@
         line-height: 1.6;
       }
     }
+    
+    // Force chart visibility on mobile
+    .chart-container {
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      width: 100% !important;
+      height: auto !important;
+      min-height: 300px !important;
+    }
+  }
 
     // Main title
     h1,
