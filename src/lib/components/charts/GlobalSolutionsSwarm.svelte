@@ -24,6 +24,11 @@
   let svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
   let simulation: d3.Simulation<Node, undefined>;
 
+  // Responsive dimensions
+  let containerWidth = 900;
+  let containerHeight = 420;
+  let isMobile = false;
+
   // Country color palette - expanded for all 9 cities
   const COUNTRY_COLORS: Record<string, string> = {
     Singapore: '#f39c12', // Singapore Orange
@@ -90,27 +95,51 @@
 
   // Three-tiered size system (üç kademeli)
   // Small, Medium, Large categories with clear size gaps
-  const SIZE_CONFIG: Record<MeasureType, { base: number; variation: number }> =
-    {
-      door: { base: 6, variation: 1 }, // LARGE - Platform Doors (most important)
-      pit: { base: 2.5, variation: 0.5 }, // SMALL - Suicide Pits (least visible)
-      led: { base: 4, variation: 0.8 }, // MEDIUM - Blue LED
-      training: { base: 6, variation: 1 }, // LARGE - Staff Training (important)
-      helpline: { base: 4, variation: 0.8 }, // MEDIUM - Helpline
-    };
+  // Responsive size config based on mobile/desktop
+  $: SIZE_CONFIG =
+    isMobile ?
+      {
+        door: { base: 4, variation: 0.7 }, // LARGE - Platform Doors (smaller on mobile)
+        pit: { base: 1.5, variation: 0.3 }, // SMALL - Suicide Pits (smaller on mobile)
+        led: { base: 2.5, variation: 0.5 }, // MEDIUM - Blue LED (smaller on mobile)
+        training: { base: 4, variation: 0.7 }, // LARGE - Staff Training (smaller on mobile)
+        helpline: { base: 2.5, variation: 0.5 }, // MEDIUM - Helpline (smaller on mobile)
+      }
+    : {
+        door: { base: 6, variation: 1 }, // LARGE - Platform Doors (most important)
+        pit: { base: 2.5, variation: 0.5 }, // SMALL - Suicide Pits (least visible)
+        led: { base: 4, variation: 0.8 }, // MEDIUM - Blue LED
+        training: { base: 6, variation: 1 }, // LARGE - Staff Training (important)
+        helpline: { base: 4, variation: 0.8 }, // MEDIUM - Helpline
+      };
 
   type CityLayout = { city: string; row: number; col: number };
 
-  const CITY_LAYOUT: CityLayout[] = [
-    { city: 'Singapore', row: 0, col: 0 },
-    { city: 'Tokyo', row: 0, col: 1 },
-    { city: 'Seoul', row: 0, col: 2 },
-    { city: 'Berlin', row: 0, col: 3 },
-    { city: 'London', row: 1, col: 0 },
-    { city: 'Paris', row: 1, col: 1 },
-    { city: 'Toronto', row: 1, col: 2 },
-    { city: 'Amsterdam', row: 1, col: 3 },
-  ];
+  // Responsive city layout - single column for mobile, 4x2 grid for desktop
+  $: CITY_LAYOUT =
+    isMobile ?
+      [
+        // Single column for mobile
+        { city: 'Singapore', row: 0, col: 0 },
+        { city: 'Tokyo', row: 1, col: 0 },
+        { city: 'Seoul', row: 2, col: 0 },
+        { city: 'Berlin', row: 3, col: 0 },
+        { city: 'London', row: 4, col: 0 },
+        { city: 'Paris', row: 5, col: 0 },
+        { city: 'Toronto', row: 6, col: 0 },
+        { city: 'Amsterdam', row: 7, col: 0 },
+      ]
+    : [
+        // 4x2 grid for desktop
+        { city: 'Singapore', row: 0, col: 0 },
+        { city: 'Tokyo', row: 0, col: 1 },
+        { city: 'Seoul', row: 0, col: 2 },
+        { city: 'Berlin', row: 0, col: 3 },
+        { city: 'London', row: 1, col: 0 },
+        { city: 'Paris', row: 1, col: 1 },
+        { city: 'Toronto', row: 1, col: 2 },
+        { city: 'Amsterdam', row: 1, col: 3 },
+      ];
 
   const GRID_COLUMNS =
     CITY_LAYOUT.reduce((max, item) => Math.max(max, item.col), 0) + 1;
@@ -389,19 +418,19 @@
 
     // Set viewBox for responsive scaling
     svg
-      .attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('viewBox', `0 0 ${containerWidth} ${containerHeight}`)
       .attr('preserveAspectRatio', 'xMidYMid meet');
 
     // Background (transparent)
     svg
       .append('rect')
-      .attr('width', width)
-      .attr('height', height)
+      .attr('width', containerWidth)
+      .attr('height', containerHeight)
       .attr('fill', 'transparent')
       .attr('class', 'bg');
 
     // Recompute centers on render for current size
-    COUNTRY_CENTERS = getCountryCenters(width, height);
+    COUNTRY_CENTERS = getCountryCenters(containerWidth, containerHeight);
     labelRects = computeLabelRects();
 
     // Title
@@ -509,16 +538,39 @@
   }
 
   onMount(() => {
+    // Responsive setup
+    const updateDimensions = () => {
+      const vw = window.innerWidth;
+      isMobile = vw < 768;
+
+      if (isMobile) {
+        // Mobile: single column layout
+        containerWidth = Math.min(vw - 32, 400); // padding: 16px each side
+        containerHeight = 800; // taller for vertical stack
+      } else {
+        containerWidth = width;
+        containerHeight = height;
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+
     console.log('GlobalSolutionsSwarm onMount:', {
       dataLength: data.length,
       stepId,
       cityFilter,
       highlightedCity,
+      isMobile,
+      containerWidth,
+      containerHeight,
     });
     nodes = buildNodesFromData(data);
     console.log('Initial nodes generated:', nodes.length);
     setupSimulation();
     renderSVG();
+
+    return () => window.removeEventListener('resize', updateDimensions);
   });
 
   onDestroy(() => {
@@ -568,18 +620,29 @@
 <style>
   .swarm-wrap {
     width: 100%;
+    max-width: 900px; /* Desktop max */
     display: block;
     position: relative;
     overflow: hidden;
     border-radius: 0;
     box-shadow: none;
     background: transparent;
+
+    @media (max-width: 768px) {
+      max-width: 100%;
+      height: auto;
+      min-height: 600px; /* Ensure enough space for stacked cities */
+    }
   }
 
   .swarm-svg {
     width: 100%;
     height: 100%;
     display: block;
+
+    @media (max-width: 768px) {
+      min-height: 600px;
+    }
   }
 
   :global(.swarm-svg circle.dot) {
@@ -605,6 +668,12 @@
     pointer-events: none;
     z-index: 1000;
     max-width: 200px;
+
+    @media (max-width: 768px) {
+      font-size: 11px; /* Smaller tooltip */
+      padding: 6px 10px;
+      max-width: 160px; /* Narrower */
+    }
   }
 
   .tooltip-header {

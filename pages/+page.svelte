@@ -1154,6 +1154,11 @@
       opacity 0.3s ease-out;
     transform-origin: center;
     will-change: transform;
+
+    @media (max-width: 768px) {
+      width: 100%; // Full width on mobile
+      max-width: none;
+    }
   }
 
   /* Smooth alignment transitions */
@@ -1351,11 +1356,27 @@
     display: flex;
     align-items: center; /* center align to prevent viewport overflow */
     justify-content: center;
+
+    @media (max-width: 768px) {
+      padding: 1rem 0;
+      max-width: 100%;
+
+      // Scale down all charts
+      :global(svg) {
+        max-width: 100%;
+        height: auto;
+      }
+    }
   }
 
   .metro-monthly-wrapper {
     padding-top: 2.5rem;
     padding-bottom: 1.5rem;
+
+    @media (max-width: 768px) {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
   }
 
   .marmaray-chart-container {
@@ -1496,7 +1517,7 @@
   @media (max-width: 768px) {
     :global(.scrollytelling-container) {
       grid-template-columns: 1fr;
-      gap: 1rem;
+      gap: 0.5rem;
       padding: 0 1rem;
     }
 
@@ -1504,6 +1525,8 @@
       position: relative;
       height: 400px;
       margin-bottom: 2rem;
+      top: 0;
+      min-height: auto;
     }
 
     .step-container {
@@ -1514,6 +1537,43 @@
     .step-content {
       margin-left: 0;
       max-width: 100%;
+      padding: 1.5rem;
+
+      h2 {
+        font-size: 1.25rem; // Smaller headings
+      }
+
+      .step-text {
+        font-size: 0.9375rem; // 15px
+        line-height: 1.6;
+      }
+    }
+
+    // Main title
+    h1,
+    .story-title {
+      font-size: 1.75rem; // 28px
+      line-height: 1.2;
+    }
+
+    // Section headings
+    h2,
+    .step-headline {
+      font-size: 1.25rem; // 20px
+      line-height: 1.3;
+    }
+
+    // Body text
+    .step-text,
+    p {
+      font-size: 0.9375rem; // 15px
+      line-height: 1.6;
+    }
+
+    // Highlighted spans
+    span[style*='background'] {
+      padding: 0.1em 0.35em;
+      font-size: 0.875rem; // 14px
     }
   }
 

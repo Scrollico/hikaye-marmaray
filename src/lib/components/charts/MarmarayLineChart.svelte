@@ -3,6 +3,26 @@
   export let height: number = 600;
   export let showIncidents: boolean = true;
   export let highlightStations: string[] = [];
+  export let responsive: boolean = true; // New prop for responsive behavior
+
+  // Responsive dimensions
+  let actualWidth = width;
+  let actualHeight = height;
+
+  // Make responsive if needed
+  $: if (responsive && typeof window !== 'undefined') {
+    const vw = window.innerWidth;
+    if (vw < 768) {
+      actualWidth = Math.min(vw - 32, 400); // Mobile width with padding
+      actualHeight = 300; // Shorter height for mobile
+    } else {
+      actualWidth = width;
+      actualHeight = height;
+    }
+  } else {
+    actualWidth = width;
+    actualHeight = height;
+  }
 
   // Metro map colors - authentic transit map palette
   const marmarayLineColor = '#00A3DD'; // Istanbul Metro blue
@@ -66,11 +86,14 @@
   // Interchange badge was removed; no offset calculations needed
 </script>
 
-<div class="marmaray-metro-map" style="width: {width}px; height: {height}px;">
+<div
+  class="marmaray-metro-map"
+  style="width: {actualWidth}px; height: {actualHeight}px;"
+>
   <svg
     width="100%"
     height="100%"
-    viewBox="0 0 {width} {height}"
+    viewBox="0 0 {actualWidth} {actualHeight}"
     preserveAspectRatio="xMidYMid meet"
   >
     <defs>
@@ -269,11 +292,11 @@
       {/each}
 
       <!-- Metro Map Legend -->
-      <g class="metro-legend" transform="translate(0, {height * 0.75})">
+      <g class="metro-legend" transform="translate(0, {actualHeight * 0.75})">
         <rect
           x="0"
           y="0"
-          width={width - 80}
+          width={actualWidth - 80}
           height="50"
           fill="#F7FAFC"
           stroke="#E2E8F0"
@@ -508,6 +531,9 @@
   @media (max-width: 768px) {
     .marmaray-metro-map {
       margin: 0 1rem;
+      max-width: 100%;
+      width: 100% !important;
+      height: auto !important;
     }
 
     :global(.station-label) {
@@ -520,6 +546,10 @@
 
     :global(.route-header text) {
       font-size: 14px !important;
+    }
+
+    :global(.metro-legend) {
+      transform: translate(0, calc(100% - 60px)) !important;
     }
   }
 </style>
