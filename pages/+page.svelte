@@ -1163,14 +1163,16 @@
       min-height: 200px; // Ensure minimum height
     }
   }
-  
+
   // Mobile video container improvements
   @media (max-width: 768px) {
     .video-frame {
       width: 100%;
       padding: 0 1rem; // Add padding for mobile
-      
-      &.left, &.center, &.right {
+
+      &.left,
+      &.center,
+      &.right {
         justify-content: center; // Center all videos on mobile
       }
     }
@@ -1269,7 +1271,7 @@
     z-index: 0; /* lower than header/text */
     margin: 0;
     padding: 0;
-    
+
     @media (max-width: 768px) {
       height: 100vh;
       height: 100dvh; /* Use dynamic viewport height for mobile */
@@ -1287,7 +1289,7 @@
     display: flex;
     align-items: center;
     animation: splitScreenZoomIn 1.2s ease-out;
-    
+
     @media (max-width: 768px) {
       flex-direction: column; // Stack vertically on mobile
       height: 100vh;
@@ -1311,7 +1313,7 @@
     flex: 1;
     height: 100vh;
     position: relative;
-    
+
     @media (max-width: 768px) {
       flex: none;
       height: 50vh; // Each map takes half the screen on mobile
@@ -1327,7 +1329,7 @@
     position: relative;
     box-shadow: 0 0 10px rgba(211, 47, 47, 0.5);
     animation: dividerAppear 0.8s ease-out 0.4s both;
-    
+
     @media (max-width: 768px) {
       width: 100%;
       height: 2px; // Horizontal divider on mobile
@@ -1569,7 +1571,7 @@
       margin-bottom: 2rem;
       top: 0;
       order: 1; // Show graphics first on mobile
-      
+
       // Ensure charts are visible
       .chart-container {
         display: flex !important;
@@ -1598,7 +1600,7 @@
         line-height: 1.6;
       }
     }
-    
+
     // Force chart visibility on mobile
     .chart-container {
       display: flex !important;
@@ -1610,32 +1612,31 @@
     }
   }
 
-    // Main title
-    h1,
-    .story-title {
-      font-size: 1.75rem; // 28px
-      line-height: 1.2;
-    }
+  // Main title
+  h1,
+  .story-title {
+    font-size: 1.75rem; // 28px
+    line-height: 1.2;
+  }
 
-    // Section headings
-    h2,
-    .step-headline {
-      font-size: 1.25rem; // 20px
-      line-height: 1.3;
-    }
+  // Section headings
+  h2,
+  .step-headline {
+    font-size: 1.25rem; // 20px
+    line-height: 1.3;
+  }
 
-    // Body text
-    .step-text,
-    p {
-      font-size: 0.9375rem; // 15px
-      line-height: 1.6;
-    }
+  // Body text
+  .step-text,
+  p {
+    font-size: 0.9375rem; // 15px
+    line-height: 1.6;
+  }
 
-    // Highlighted spans
-    span[style*='background'] {
-      padding: 0.1em 0.35em;
-      font-size: 0.875rem; // 14px
-    }
+  // Highlighted spans
+  span[style*='background'] {
+    padding: 0.1em 0.35em;
+    font-size: 0.875rem; // 14px
   }
 
   /* Communication Chart Styles */
