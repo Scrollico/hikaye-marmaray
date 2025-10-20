@@ -50,6 +50,7 @@
     "@reuters-graphics/yaks-eslint": "^0.1.1",
     "@reuters-graphics/yaks-prettier": "^0.1.1",
     "@sindresorhus/slugify": "^2.2.1",
+    "@sveltejs/adapter-cloudflare": "^7.2.4",
     "@sveltejs/adapter-static": "^3.0.8",
     "@sveltejs/kit": "^2.20.2",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",

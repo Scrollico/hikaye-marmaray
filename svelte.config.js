@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-static';
+import adapter from '@sveltejs/adapter-cloudflare';
 import autoprefixer from 'autoprefixer';
 import { sveltePreprocess } from 'svelte-preprocess';
 import { getBasePath } from '@reuters-graphics/graphics-kit-publisher';
@@ -36,10 +36,11 @@ const config = {
       base: '',
     },
     adapter: adapter({
-      pages: 'dist',
-      assets: 'dist',
-      fallback: null,
-      precompress: false,
+      // Cloudflare Pages configuration
+      routes: {
+        include: ['/*'],
+        exclude: ['<all>'],
+      },
     }),
     prerender: {
       handleMissingId: 'warn',
