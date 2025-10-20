@@ -47,6 +47,17 @@
     Amsterdam: 'Amsterdam',
   };
 
+  // Function to get color based on effectiveness level
+  function getEffectivenessColor(effectiveness: number): string {
+    if (effectiveness >= 80) {
+      return '#e74c3c'; // Red for High (80%+)
+    } else if (effectiveness >= 40) {
+      return '#f39c12'; // Orange for Medium (40-79%)
+    } else {
+      return '#95a5a6'; // Gray for Low (<40%)
+    }
+  }
+
   type MeasureType = 'door' | 'pit' | 'led' | 'training' | 'helpline';
 
   type Node = {
@@ -81,48 +92,74 @@
   // Small, Medium, Large categories with clear size gaps
   const SIZE_CONFIG: Record<MeasureType, { base: number; variation: number }> =
     {
-      door: { base: 9, variation: 1.5 }, // LARGE - Platform Doors (most important)
-      pit: { base: 2, variation: 0.5 }, // SMALL - Suicide Pits (least visible)
-      led: { base: 5, variation: 1 }, // MEDIUM - Blue LED
-      training: { base: 9, variation: 1.5 }, // LARGE - Staff Training (important)
-      helpline: { base: 5, variation: 1 }, // MEDIUM - Helpline
+      door: { base: 6, variation: 1 }, // LARGE - Platform Doors (most important)
+      pit: { base: 2.5, variation: 0.5 }, // SMALL - Suicide Pits (least visible)
+      led: { base: 4, variation: 0.8 }, // MEDIUM - Blue LED
+      training: { base: 6, variation: 1 }, // LARGE - Staff Training (important)
+      helpline: { base: 4, variation: 0.8 }, // MEDIUM - Helpline
     };
 
-  // Multi-centroid layout: cluster per country for clearer structure - now supports all 9 cities
-  function getCountryCenters(w: number, h: number) {
-    const padX = 80;
-    const padY = 60;
-    const innerW = w - padX * 2;
-    const innerH = h - padY * 2;
-    const columns = 3; // Increased to 3 columns for 9 cities
-    const rows = 3; // 3 rows for 9 cities
+  type CityLayout = { city: string; row: number; col: number };
+
+  const CITY_LAYOUT: CityLayout[] = [
+    { city: 'Singapore', row: 0, col: 0 },
+    { city: 'Tokyo', row: 0, col: 1 },
+    { city: 'Seoul', row: 0, col: 2 },
+    { city: 'Berlin', row: 0, col: 3 },
+    { city: 'London', row: 1, col: 0 },
+    { city: 'Paris', row: 1, col: 1 },
+    { city: 'Toronto', row: 1, col: 2 },
+    { city: 'Amsterdam', row: 1, col: 3 },
+  ];
+
+  const GRID_COLUMNS =
+    CITY_LAYOUT.reduce((max, item) => Math.max(max, item.col), 0) + 1;
+  const GRID_ROWS =
+    CITY_LAYOUT.reduce((max, item) => Math.max(max, item.row), 0) + 1;
+
+  const LABEL_VERTICAL_GAP = 70;
+  const SWARM_VERTICAL_OFFSET = 22;
+  const BASE_ROW_GAP = 160;
+
+  type GridMetrics = {
+    padX: number;
+    padTop: number;
+    padBottom: number;
+    cellW: number;
+    cellH: number;
+    rowGap: number;
+  };
+
+  function computeGridMetrics(w: number, h: number): GridMetrics {
+    const padX = Math.max(80, w * 0.08);
+    const padTop = Math.max(110, h * 0.2);
+    const padBottom = Math.max(80, h * 0.16);
+    const columns = Math.max(1, GRID_COLUMNS);
+    const rows = Math.max(1, GRID_ROWS);
+    const innerW = Math.max(260, w - padX * 2);
+    const innerH = Math.max(0, h - padTop - padBottom);
+    const maxGap = rows > 1 ? Math.max(0, innerH / rows) : 0;
+    const rowGap = rows > 1 ? Math.min(BASE_ROW_GAP, maxGap) : 0;
+    const availableHeight = Math.max(60, innerH - rowGap * (rows - 1));
+    const cellH = rows > 0 ? availableHeight / rows : availableHeight;
     const cellW = innerW / columns;
-    const cellH = innerH / rows;
-    // Order all 9 cities in a logical layout
-    const order: string[] = [
-      'Singapore',
-      'Tokyo',
-      'Seoul', // Top row
-      'London',
-      'Paris',
-      'Berlin', // Middle row
-      'Toronto',
-      'Amsterdam',
-      'Singapore', // Bottom row (Singapore appears twice - will be handled)
-    ];
+    return { padX, padTop, padBottom, cellW, cellH, rowGap };
+  }
+
+  // Multi-centroid layout: cluster per country with padded cells
+  function getCountryCenters(w: number, h: number) {
+    const metrics = computeGridMetrics(w, h);
     const centers: Record<
       string,
       { x: number; y: number; col: number; row: number }
     > = {} as any;
 
-    // Track unique cities
-    const uniqueCities = [...new Set(order)];
-
-    uniqueCities.forEach((city, i) => {
-      const row = Math.floor(i / columns);
-      const col = i % columns;
-      const cx = padX + col * cellW + cellW / 2;
-      const cy = padY + row * cellH + cellH / 2;
+    CITY_LAYOUT.forEach(({ city, row, col }) => {
+      const cx = metrics.padX + col * metrics.cellW + metrics.cellW / 2;
+      const cy =
+        metrics.padTop +
+        row * (metrics.cellH + metrics.rowGap) +
+        metrics.cellH / 2;
       centers[city] = { x: cx, y: cy, col, row };
     });
     return centers;
@@ -144,7 +181,7 @@
       x2: number;
       y2: number;
     }> = [];
-    const pad = 10; // extra safety around text
+    const pad = 14; // extra safety around text
     Object.keys(COUNTRY_NAMES).forEach((city) => {
       const center = COUNTRY_CENTERS[city];
       const label = COUNTRY_NAMES[city];
@@ -152,7 +189,7 @@
       const w = Math.max(60, label.length * 6.8);
       const h = 16; // font-size 12px -> bbox ~16px high
       const cx = center.x;
-      const cy = center.y - 50; // keep in sync with render offset below
+      const cy = center.y - LABEL_VERTICAL_GAP; // keep in sync with render offset below
       rects.push({
         city: city,
         x1: cx - w / 2 - pad,
@@ -215,16 +252,7 @@
 
   function buildNodesFromData(rows: GlobalSolutionRow[]): Node[] {
     // Now include all 9 cities instead of filtering to just 4
-    const allowedCities = [
-      'Singapore',
-      'Tokyo',
-      'London',
-      'Seoul',
-      'Paris',
-      'Toronto',
-      'Berlin',
-      'Amsterdam',
-    ];
+    const allowedCities = CITY_LAYOUT.map((item) => item.city);
     const filtered = rows.filter((row) => allowedCities.includes(row.city));
 
     // Expand each row into many micro-nodes to create a dense swarm
@@ -267,7 +295,7 @@
 
     // Scale by effectiveness if provided (more effective = larger)
     if (effectiveness !== undefined) {
-      baseSize = baseSize * (0.7 + effectiveness / 100); // 0.7x to 1.7x based on effectiveness
+      baseSize = baseSize * (0.8 + effectiveness / 200); // 0.8x to 1.3x based on effectiveness
     }
 
     // Add some randomness
@@ -277,8 +305,15 @@
     return Math.max(1, finalSize);
   }
 
-  function assignData(sceneKey: SceneKey) {
+  function refreshSwarm() {
     nodes = buildNodesFromData(data);
+    if (svg) {
+      renderSVG();
+    }
+    if (simulation) {
+      simulation.nodes(nodes);
+      simulation.alpha(0.35).restart();
+    }
   }
 
   function setupSimulation() {
@@ -288,20 +323,23 @@
         'x',
         d3
           .forceX<Node>((d) => COUNTRY_CENTERS[d.city]?.x || width / 2)
-          .strength(0.2)
+          .strength(0.14)
       )
       .force(
         'y',
         d3
-          .forceY<Node>((d) => (COUNTRY_CENTERS[d.city]?.y || height / 2) + 8)
-          .strength(0.22)
+          .forceY<Node>(
+            (d) =>
+              (COUNTRY_CENTERS[d.city]?.y || height / 2) + SWARM_VERTICAL_OFFSET
+          )
+          .strength(0.32)
       )
       .force(
         'collide',
         d3.forceCollide<Node>((d) => d.radius + 0.8).iterations(2)
       )
       // Soft push away from label rectangles so dots don't overlap titles
-      .force('label-avoid', labelAvoidForce(0.4))
+      .force('label-avoid', labelAvoidForce(0.6))
       .alphaDecay(0.03)
       .velocityDecay(0.2)
       .on('tick', tick);
@@ -317,9 +355,12 @@
         const nx = node.x;
         const ny = node.y;
         if (nx >= rect.x1 && nx <= rect.x2 && ny >= rect.y1 && ny <= rect.y2) {
-          // push downwards out of the label area (labels sit above clusters)
+          // push both downwards and slightly sideways out of the label area
           const dyBelow = rect.y2 - ny + 1;
-          node.vy = (node.vy || 0) + (dyBelow * strength * alpha) / 8;
+          const dxSide = nx - (rect.x1 + (rect.x2 - rect.x1) / 2);
+          node.vy = (node.vy || 0) + (dyBelow * strength * alpha) / 3;
+          node.vx =
+            (node.vx || 0) + (dxSide > 0 ? 0.4 : -0.4) * strength * alpha;
         }
       }
     } as unknown as d3.Force<Node, undefined>;
@@ -368,7 +409,7 @@
     svg
       .append('text')
       .attr('x', 20)
-      .attr('y', 28)
+      .attr('y', 26)
       .attr('class', 'title')
       .attr('fill', '#2c3e50')
       .attr('font-size', '16px')
@@ -383,7 +424,7 @@
       labels
         .append('text')
         .attr('x', c.x)
-        .attr('y', c.y - 50)
+        .attr('y', c.y - LABEL_VERTICAL_GAP)
         .attr('text-anchor', 'middle')
         .attr('fill', COUNTRY_COLORS[city] || '#5b6770')
         .attr('font-size', '12px')
@@ -401,7 +442,7 @@
       .attr('r', (d) => d.radius)
       .attr('cx', (d) => d.x)
       .attr('cy', (d) => d.y)
-      .attr('fill', (d) => COUNTRY_COLORS[d.city] || '#95a5a6')
+      .attr('fill', (d) => getEffectivenessColor(d.effectiveness))
       .attr('opacity', (d) => {
         if (highlightedCity && d.city !== highlightedCity) return 0.3;
         return 0.85;
@@ -427,40 +468,6 @@
         mouseX = event.pageX;
         mouseY = event.pageY;
       });
-
-    // Effectiveness legend
-    const legend = svg.append('g').attr('class', 'effectiveness-legend');
-    legend
-      .append('text')
-      .attr('x', width - 120)
-      .attr('y', 20)
-      .attr('font-size', '12px')
-      .attr('font-weight', '600')
-      .attr('fill', '#2c3e50')
-      .text('Etkinlik:');
-
-    // Legend items
-    const legendItems = [
-      { color: '#e74c3c', label: 'Yüksek (80%+)', range: '80-100%' },
-      { color: '#f39c12', label: 'Orta (40-79%)', range: '40-79%' },
-      { color: '#95a5a6', label: 'Düşük (<40%)', range: '<40%' },
-    ];
-
-    legendItems.forEach((item, i) => {
-      const itemGroup = legend
-        .append('g')
-        .attr('transform', `translate(${width - 120}, ${35 + i * 15})`);
-
-      itemGroup.append('circle').attr('r', 4).attr('fill', item.color);
-
-      itemGroup
-        .append('text')
-        .attr('x', 10)
-        .attr('y', 2)
-        .attr('font-size', '10px')
-        .attr('fill', '#2c3e50')
-        .text(item.range);
-    });
   }
 
   function updateScene() {
@@ -471,8 +478,6 @@
       cityFilter,
       highlightedCity,
     });
-    assignData(sceneKey);
-
     // Update title
     if (svg) {
       const currentSceneName = sceneNames[sceneKey];
@@ -497,6 +502,10 @@
       if (highlightedCity && d.city !== highlightedCity) return 0.3;
       return 0.85;
     });
+  }
+
+  $: if (simulation && data?.length) {
+    refreshSwarm();
   }
 
   onMount(() => {

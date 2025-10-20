@@ -26,6 +26,11 @@
     FullWidthBody,
   } from '$lib/components/layouts';
 
+  // ===== ANIMATION ENHANCEMENTS - SAFE TO REMOVE =====
+  // import SmoothScroll from '$lib/components/SmoothScroll.svelte';
+  // import AudioController from '$lib/components/AudioController.svelte';
+  // ===================================================
+
   // Story metadata
   const storyMeta: any = {
     title: "Marmaray'da Son 5 Yılda 29 İntihar Vakası",
@@ -640,6 +645,8 @@
   <meta name="description" content={storyMeta.subtitle} />
 </svelte:head>
 
+<!-- ===== SMOOTH SCROLL WRAPPER - SAFE TO REMOVE ===== -->
+<!-- <SmoothScroll> -->
 <div class="story-container" class:step3={currentStep?.id === 'step-3'}>
   <!-- Main Scrollytelling Container -->
   <ScrollytellingEngine
@@ -708,7 +715,11 @@
           {/if}
         </div>
       {:else}
-        <div class="step-content" class:active>
+        <div
+          class="step-content animate-on-scroll"
+          class:active
+          class:visible={active}
+        >
           {#if step.headline}
             <h2>{step.headline}</h2>
           {/if}
@@ -780,7 +791,7 @@
             {/if}
           </div>
         {:else if currentStep.visual === 'yearly-trend' || currentStep.visual === 'yearly-analysis'}
-          <div class="chart-container">
+          <div class="chart-container hover-lift">
             {#if dataLoaded && marmarayData.yearly}
               <YearlyTrendChart
                 data={marmarayData.yearly}
@@ -798,7 +809,7 @@
             {/if}
           </div>
         {:else if currentStep.visual === 'weekly-distribution'}
-          <div class="chart-container">
+          <div class="chart-container hover-lift">
             {#if dataLoaded && marmarayData.weekly}
               <TableBarChart
                 data={marmarayData.weekly.map((item) => ({
@@ -831,7 +842,7 @@
             <InteractiveWordCloud />
           </div>
         {:else if currentStep.visual === 'metro-monthly'}
-          <div class="chart-container">
+          <div class="chart-container hover-lift">
             {#if dataLoaded && metroData.monthly?.length}
               <MetroMonthlyLineChart
                 data={metroData.monthly}
@@ -848,7 +859,7 @@
           <!-- Text-only step - no visual content needed -->
           <div class="text-only-placeholder"></div>
         {:else if currentStep.visual === 'european-data'}
-          <div class="chart-container">
+          <div class="chart-container hover-lift">
             {#if dataLoaded && marmarayData.europeAverages?.length}
               <EuropeanSuicideChart
                 data={marmarayData.europeAverages}
@@ -869,7 +880,7 @@
             {/if}
           </div>
         {:else if currentStep.visual === 'durkheim-theory'}
-          <div class="chart-container">
+          <div class="chart-container hover-lift">
             <DurkheimTheoryChart
               width={600}
               height={400}
@@ -878,7 +889,7 @@
             />
           </div>
         {:else if currentStep.visual === 'global-solutions'}
-          <div class="chart-container">
+          <div class="chart-container hover-lift">
             {#if isGlobalSolutionsStep(currentStep.id)}
               <GlobalSolutionsSwarm
                 width={800}
@@ -1028,8 +1039,20 @@
   </svelte:component>
 </div>
 
+<!-- </SmoothScroll> -->
+<!-- ===== END SMOOTH SCROLL WRAPPER ===== -->
+
+<!-- ===== AUDIO CONTROLLER - SAFE TO REMOVE ===== -->
+<!-- <AudioController /> -->
+
+<!-- ===== END AUDIO CONTROLLER ===== -->
+
 <style lang="scss">
   @use '@reuters-graphics/graphics-components/dist/scss/mixins' as mixins;
+
+  // ===== ANIMATION STYLES - SAFE TO REMOVE =====
+  @import '../src/lib/styles/animations.scss';
+  // =============================================
 
   .story-container {
     min-height: 100vh;
