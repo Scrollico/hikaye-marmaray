@@ -135,18 +135,21 @@
       padding-left: 1.5rem;
       padding-right: 1.5rem;
       max-width: 100% !important;
+      padding-top: 2rem !important; // Override inline styles for mobile
+      padding-bottom: 2rem !important;
     }
 
     .headline {
-      font-size: 24px;
+      font-size: 22px; // Slightly smaller for mobile
       line-height: 1.3;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
     }
 
     .body {
       font-size: 16px;
-      line-height: 1.6;
+      line-height: 1.7; // Better line spacing for mobile
       text-align: left; // Better readability on mobile
+      max-width: 100%;
     }
 
     .body.center {
@@ -161,6 +164,13 @@
     .byline {
       font-size: 13px;
       margin-bottom: 1.25rem;
+    }
+
+    // Ensure proper spacing for highlighted text
+    :global(span[style*='background']) {
+      padding: 0.15em 0.4em;
+      font-size: 0.9em;
+      line-height: 1.4;
     }
   }
 </style>

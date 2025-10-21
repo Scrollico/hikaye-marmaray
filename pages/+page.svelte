@@ -680,8 +680,8 @@
           : null}
           maxWidth={760}
           align="center"
-          topPadding="8rem"
-          bottomPadding="8rem"
+          topPadding="3rem"
+          bottomPadding="3rem"
         ></FullWidthBody>
       {:else if step.id === 'step-14-1'}
         <!-- Normal text content for step 14-1 -->
