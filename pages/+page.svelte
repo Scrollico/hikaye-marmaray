@@ -671,13 +671,6 @@
       {#if step.id === 'step-3' || step.id === 'step-11-1' || step.id === 'step-26' || step.id === 'step-27'}
         <FullWidthBody
           content={step.text}
-          headline={(
-            step.id === 'step-11-1' ||
-            step.id === 'step-26' ||
-            step.id === 'step-27'
-          ) ?
-            step.headline
-          : null}
           maxWidth={760}
           align="center"
           topPadding="3rem"
@@ -686,14 +679,10 @@
       {:else if step.id === 'step-14-1'}
         <!-- Normal text content for step 14-1 -->
         <div class="step-content">
-          <h2 class="step-headline">{step.headline}</h2>
           <p class="step-text">{step.text}</p>
         </div>
       {:else if isVideoStep(step)}
         <div class="video-caption" class:fade-in={videoStepVisible}>
-          {#if step.headline}
-            <h3 class="video-title">{step.headline}</h3>
-          {/if}
           {#if step.text}
             <p class="video-description">{@html step.text}</p>
           {/if}
@@ -707,9 +696,6 @@
             3 - expertOpinionProgress * 3
           )}px);"
         >
-          {#if step.headline}
-            <h2 class="expert-title">{step.headline}</h2>
-          {/if}
           {#if step.text}
             <div class="expert-text">{@html step.text}</div>
           {/if}
@@ -720,9 +706,6 @@
           class:active
           class:visible={active}
         >
-          {#if step.headline}
-            <h2>{step.headline}</h2>
-          {/if}
           {#if step.text}
             <div class="step-text">{@html step.text}</div>
           {/if}
@@ -1065,21 +1048,73 @@
   // Scrollytelling Layout
   :global(.scrollytelling-container) {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
+    grid-template-columns: minmax(320px, 0.52fr) minmax(320px, 0.48fr);
+    gap: clamp(1.5rem, 2vw, 3rem);
+    align-items: start;
     min-height: 100vh;
-    max-width: 1400px;
+    max-width: 1440px;
     margin: 0 auto;
-    padding: 0 2rem;
+    padding: clamp(1.5rem, 4vw, 3rem);
+  }
+
+  :global(.scrollytelling-container .steps-container) {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    grid-column: 2;
+  }
+
+  :global(.scrollytelling-container .step) {
+    min-height: clamp(60vh, 72vh, 92vh);
+    padding: clamp(2rem, 5vh, 4rem) 0;
+    display: flex;
+    align-items: center;
+  }
+
+  :global(.scrollytelling-container .step.active) {
+    opacity: 1;
+  }
+
+  :global(.scrollytelling-container .sticky-container) {
+    grid-column: 1;
+    position: sticky;
+    top: clamp(1rem, 4vh, 3rem);
+    height: auto;
+    min-height: 60vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: clamp(0.5rem, 2vh, 1.5rem);
+  }
+
+  @media (max-width: 1024px) {
+    :global(.scrollytelling-container) {
+      grid-template-columns: 1fr;
+      gap: clamp(1.25rem, 3vw, 2rem);
+      padding: clamp(1rem, 4vw, 2rem);
+    }
+
+    :global(.scrollytelling-container .sticky-container) {
+      position: sticky;
+      top: clamp(0.5rem, 4vw, 2rem);
+      min-height: unset;
+      margin-bottom: 1.5rem;
+      order: -1;
+    }
+
+    :global(.scrollytelling-container .step) {
+      min-height: auto;
+      padding: clamp(2rem, 6vw, 3rem) 0;
+    }
   }
 
   // Text Steps (Right Column)
   .step-container {
-    padding: 2rem 0;
-    min-height: 60vh;
+    width: 100%;
     display: flex;
     align-items: center;
-    padding-top: 2rem;
+    justify-content: center;
   }
 
   .step-content {
@@ -1116,18 +1151,33 @@
     }
   }
 
+  @media (max-width: 1024px) {
+    .step-content {
+      width: 100%;
+      max-width: 640px;
+      margin: 0;
+      padding: clamp(1.5rem, 5vw, 2.25rem);
+    }
+  }
+
   /* Step 3 now handled by FullWidthBody */
 
   /* Graphic Area (Left Column) */
   .graphic-container {
-    position: sticky;
-    top: 2rem;
-    min-height: calc(100vh - 4rem);
-    height: auto; /* Allow height to expand */
+    width: 100%;
+    min-height: clamp(360px, 70vh, 760px);
+    height: auto;
     display: flex;
-    align-items: center; /* Center align to prevent viewport overflow */
+    align-items: center;
     justify-content: center;
-    padding-bottom: 2rem; /* Add bottom padding */
+    padding-bottom: clamp(1rem, 3vh, 2rem);
+  }
+
+  @media (max-width: 1024px) {
+    .graphic-container {
+      min-height: clamp(300px, 55vh, 620px);
+      padding-bottom: clamp(1rem, 4vw, 1.5rem);
+    }
   }
 
   .video-frame {
@@ -1242,14 +1292,28 @@
     grid-column: 1 / -1; /* Span all columns */
     position: relative;
     z-index: 10;
+    padding: clamp(2rem, 5vh, 4rem) 0;
   }
 
   .step-container.fullwidth-step :global(.fullwidth-body) {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100vw;
-    max-width: 760px;
+    position: static;
+    transform: none;
+    width: min(960px, 100%);
+    margin: 0 auto;
+  }
+
+  @media (max-width: 1024px) {
+    .step-container {
+      justify-content: flex-start;
+    }
+
+    .step-container.fullwidth-step {
+      padding: clamp(1.5rem, 5vw, 3rem) 0;
+    }
+
+    .step-container.fullwidth-step :global(.fullwidth-body) {
+      width: 100%;
+    }
   }
 
   .map-container {

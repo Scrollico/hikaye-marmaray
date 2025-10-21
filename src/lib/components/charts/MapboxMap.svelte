@@ -18,7 +18,7 @@
     | 'texas'
     | 'test-from'
     | 'test-to' = 'turkey';
-  export let height: number = 500;
+  export let height: number | string = 500;
   export let stroke: string = '#64748b';
   export let strokeWidth: number = 1.2;
   export let fill: string = '#e2e8f0';
@@ -77,7 +77,19 @@
   let pulseState: any = null; // holds lines + pulses arrays OR anchor pulses
   let lastTime = 0;
   let lastVisible = false;
-  let geocoderLoaded = false;
+  let containerHeight = '100%';
+  let prefersReducedMotion = false;
+  let isMobileViewport = false;
+
+  $: containerHeight =
+    typeof height === 'number' ? `${Math.max(0, height)}px`
+    : typeof height === 'string' && height.trim().length > 0 ? height
+    : '100%';
+  $: if (map && mapLoaded) {
+    try {
+      map.resize();
+    } catch {}
+  }
 
   function getCam() {
     if (!map) return null;
@@ -201,14 +213,20 @@
       return;
     }
 
+    if (typeof window !== 'undefined') {
+      prefersReducedMotion =
+        window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ??
+        false;
+      isMobileViewport = window.innerWidth < 768;
+    }
+
     // Create map with performance optimizations
     const init = () => {
       const safeTarget = mapConfigs && mapConfigs[target] ? target : 'istanbul';
 
       // Mobile-specific optimizations
-      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
       const mobileSettings =
-        mobileOptimized && isMobile ?
+        mobileOptimized && isMobileViewport ?
           {
             maxZoom: 16, // Lower max zoom for mobile
             minZoom: 4,
@@ -255,6 +273,17 @@
       });
       // Track the map's initial target so we know the camera state
       currentTarget = safeTarget;
+
+      if (!interactive) {
+        try {
+          map.scrollZoom?.disable();
+          map.boxZoom?.disable();
+          map.dragRotate?.disable();
+          map.keyboard?.disable();
+          map.doubleClickZoom?.disable();
+          map.touchZoomRotate?.disable();
+        } catch {}
+      }
     };
 
     // Initialize immediately to avoid any cases where idle callback
@@ -279,12 +308,13 @@
 
     // Wait for map to load
     map.on('load', () => {
-      console.log('Mapbox map loaded successfully');
+      if (dev) console.log('Mapbox map loaded successfully');
       mapLoaded = true;
 
       // Execute any queued target once the map finishes loading
       if (pendingTarget && mapConfigs[pendingTarget]) {
-        console.log('🔄 Map loaded, applying pending target:', pendingTarget);
+        if (dev)
+          console.log('🔄 Map loaded, applying pending target:', pendingTarget);
         flyToTarget(pendingTarget);
         pendingTarget = null;
       }
@@ -670,60 +700,10 @@
       });
     });
 
-    // Lazily load Mapbox Geocoder plugin from CDN and add a search control
-    (async () => {
-      try {
-        if ((window as any).MapboxGeocoder) {
-          geocoderLoaded = true;
-        } else {
-          // Inject CSS
-          const cssId = 'mapbox-geocoder-css';
-          if (!document.getElementById(cssId)) {
-            const link = document.createElement('link');
-            link.id = cssId;
-            link.rel = 'stylesheet';
-            link.href =
-              'https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.1/mapbox-gl-geocoder.css';
-            document.head.appendChild(link);
-          }
-          // Inject JS
-          await new Promise<void>((resolve, reject) => {
-            const scriptId = 'mapbox-geocoder-js';
-            if (document.getElementById(scriptId)) return resolve();
-            const s = document.createElement('script');
-            s.id = scriptId;
-            s.src =
-              'https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.1/mapbox-gl-geocoder.min.js';
-            s.async = true;
-            s.onload = () => resolve();
-            s.onerror = () =>
-              reject(new Error('Failed to load Mapbox Geocoder'));
-            document.body.appendChild(s);
-          });
-          geocoderLoaded = true;
-        }
-        if (geocoderLoaded && mapboxgl && map) {
-          const Geocoder = (window as any).MapboxGeocoder;
-          const geocoder = new Geocoder({
-            accessToken: mapboxgl.accessToken,
-            mapboxgl,
-            marker: false,
-            collapsed: true,
-            placeholder: 'Search places…',
-          });
-          try {
-            map.addControl(geocoder, 'top-left');
-          } catch {}
-        }
-      } catch (e) {
-        console.warn('Geocoder unavailable:', e);
-      }
-    })();
-
     // Optimize tile loading
     map.on('idle', () => {
       // Map is idle, tiles are loaded
-      console.log('🟢 Map idle. Camera:', getCam());
+      if (dev) console.log('🟢 Map idle. Camera:', getCam());
     });
 
     // Handle tile loading errors gracefully
@@ -737,7 +717,7 @@
     });
 
     map.on('movestart', () => {
-      console.log('🚀 movestart. From:', getCam());
+      if (dev) console.log('🚀 movestart. From:', getCam());
       // Optimize performance during transitions
       try {
         // Temporarily reduce quality during movement for smoother transitions
@@ -747,7 +727,7 @@
     });
 
     map.on('moveend', () => {
-      console.log('🏁 moveend. To:', getCam());
+      if (dev) console.log('🏁 moveend. To:', getCam());
       // Restore full quality after transition
       try {
         map.setMaxZoom(18); // Restore full zoom capability
@@ -757,7 +737,7 @@
 
     // Handle transition start/end for better performance
     map.on('flystart', () => {
-      console.log('✈️ Fly transition started');
+      if (dev) console.log('✈️ Fly transition started');
       // Disable heavy layers during transitions
       try {
         if (map.getLayer('3d-buildings')) {
@@ -767,7 +747,7 @@
     });
 
     map.on('flyend', () => {
-      console.log('✈️ Fly transition completed');
+      if (dev) console.log('✈️ Fly transition completed');
       // Re-enable layers after transition
       try {
         if (map.getLayer('3d-buildings') && enable3DBuildings) {
@@ -781,14 +761,16 @@
   });
 
   // Track target prop changes
-  $: console.log(
-    '[MapboxMap] target prop changed to:',
-    target,
-    'mapLoaded:',
-    mapLoaded,
-    'map exists:',
-    !!map
-  );
+  $: if (dev) {
+    console.log(
+      '[MapboxMap] target prop changed to:',
+      target,
+      'mapLoaded:',
+      mapLoaded,
+      'map exists:',
+      !!map
+    );
+  }
 
   // Enhanced flyTo with smooth transitions and intermediate waypoints
   function calculateTransitionDuration(fromConfig: any, toConfig: any): number {
@@ -803,12 +785,22 @@
     // Calculate zoom difference
     const zoomDiff = Math.abs(toConfig.zoom - fromConfig.zoom);
 
-    // Base duration on distance and zoom change
-    const baseDuration = 1200;
-    const distanceFactor = Math.min(distance * 200, 2000);
-    const zoomFactor = zoomDiff * 300;
+    const baseDuration = prefersReducedMotion ? 500 : 850;
+    const distanceFactor = Math.min(
+      distance * 150,
+      prefersReducedMotion ? 400 : 900
+    );
+    const zoomFactor = Math.min(
+      zoomDiff * 200,
+      prefersReducedMotion ? 300 : 700
+    );
+    const total = baseDuration + distanceFactor + zoomFactor;
+    const durationCap =
+      prefersReducedMotion ? 1200
+      : isMobileViewport ? 1600
+      : 2200;
 
-    return Math.min(baseDuration + distanceFactor + zoomFactor, 3000);
+    return Math.max(400, Math.min(total, durationCap));
   }
 
   function getIntermediateWaypoint(fromConfig: any, toConfig: any): any {
@@ -873,14 +865,15 @@
     // Throttle rapid successive calls
     const now = Date.now();
     if (now - lastFlyToTime < FLYTO_THROTTLE_MS) {
-      console.log('⚠️ FlyTo call throttled, too frequent');
+      if (dev) console.log('⚠️ FlyTo call throttled, too frequent');
       return;
     }
     lastFlyToTime = now;
 
     // Prevent multiple simultaneous transitions
     if (isTransitioning) {
-      console.log('⚠️ Transition already in progress, queuing:', safeTarget);
+      if (dev)
+        console.log('⚠️ Transition already in progress, queuing:', safeTarget);
       return;
     }
 
@@ -918,7 +911,8 @@
       }
 
       if (waypoint) {
-        console.log('🔄 Using intermediate waypoint for smooth transition');
+        if (dev)
+          console.log('🔄 Using intermediate waypoint for smooth transition');
 
         // First transition to waypoint
         map.flyTo({
@@ -974,12 +968,13 @@
         }, duration);
       }
 
-      console.log(
-        '✅ Enhanced FlyTo command sent to:',
-        safeTarget,
-        'Duration:',
-        duration
-      );
+      if (dev)
+        console.log(
+          '✅ Enhanced FlyTo command sent to:',
+          safeTarget,
+          'Duration:',
+          duration
+        );
       currentTarget = safeTarget;
     } catch (error) {
       console.error('❌ Error in flyToTarget:', error);
@@ -1003,7 +998,8 @@
 
     if (!mapLoaded) {
       if (pendingTarget !== desiredTarget) {
-        console.log('⏳ Map not loaded yet, queuing target:', desiredTarget);
+        if (dev)
+          console.log('⏳ Map not loaded yet, queuing target:', desiredTarget);
         pendingTarget = desiredTarget;
       }
     } else if (currentTarget !== desiredTarget) {
@@ -1367,7 +1363,7 @@
 <div
   class="mapbox-map {mapLoaded ? 'loaded' : ''}"
   bind:this={mapContainer}
-  style="height: {height}px;"
+  style="height: {containerHeight};"
 >
   {#if placeholderUrl && !mapLoaded}
     <img class="map-placeholder" src={placeholderUrl} alt="" />
