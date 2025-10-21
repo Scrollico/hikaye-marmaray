@@ -1610,6 +1610,13 @@
       height: auto !important;
       min-height: 300px !important;
     }
+
+    // Ensure charts are visible in graphic container on mobile
+    .graphic-container .chart-container {
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
   }
 
   // Main title
