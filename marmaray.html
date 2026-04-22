@@ -1178,11 +1178,11 @@ function playHeroMap() {
   // ── Mapbox map ─────────────────────────────────────────
   mapboxgl.accessToken = window.MAPBOX_TOKEN || '';
 
-  const MAP_CENTER  = [29.10, 40.955];
+  const MAP_CENTER  = [28.98, 41.02];
   const ZOOM_INIT   = isMob ? 9.5 : 10.2;
   const ZOOM_CLOSE  = isMob ? 13.5 : 14.5;
-  const PITCH_INIT  = isMob ? 20 : 30;
-  const BEARING     = -8;
+  const PITCH_INIT  = 45;
+  const BEARING     = -17;
 
   const map = new mapboxgl.Map({
     container:        mbDiv,
@@ -1201,24 +1201,33 @@ function playHeroMap() {
   map.on('render', onMapRender);
 
   map.on('load', () => {
-    // Warm palette — mute all labels and road clutter, set water/land colors
+    // Warm palette: beige land, cool-muted water, subdued roads, keep district labels only
     try {
+      const KEEP_LABEL = /settlement-label|place-label|place_label|state-label/;
       map.getStyle().layers.forEach(lyr => {
-        if (lyr.type === 'symbol')
-          map.setLayoutProperty(lyr.id, 'visibility', 'none');
+        if (lyr.type === 'symbol') {
+          if (KEEP_LABEL.test(lyr.id)) {
+            // Keep district/city labels but reduce opacity so they don't fight the overlay
+            try { map.setPaintProperty(lyr.id, 'text-opacity', 0.55); } catch(e){}
+            try { map.setPaintProperty(lyr.id, 'text-color', '#5a5040'); } catch(e){}
+          } else {
+            map.setLayoutProperty(lyr.id, 'visibility', 'none');
+          }
+        }
         if (lyr.type === 'line' && /road|bridge|tunnel/.test(lyr.id)) {
-          map.setPaintProperty(lyr.id, 'line-color', '#e0d9cc');
-          map.setPaintProperty(lyr.id, 'line-opacity', /motorway|trunk/.test(lyr.id) ? 0.5 : 0.3);
+          map.setPaintProperty(lyr.id, 'line-color', '#ddd5c0');
+          map.setPaintProperty(lyr.id, 'line-opacity', /motorway|trunk/.test(lyr.id) ? 0.45 : 0.22);
         }
       });
       const tryPaint = (id, prop, val) => { try { if (map.getLayer(id)) map.setPaintProperty(id, prop, val); } catch(e){} };
-      tryPaint('water',            'fill-color', '#b5ccd8');
-      tryPaint('land',             'fill-color', '#ede8d5');
-      tryPaint('land-structure',   'fill-color', '#ede8d5');
+      tryPaint('water',            'fill-color', '#a8bfcf');
+      tryPaint('land',             'fill-color', '#efe9d0');
+      tryPaint('land-structure',   'fill-color', '#efe9d0');
       tryPaint('national-park',    'fill-color', '#dde8d0');
-      tryPaint('landuse',          'fill-color', '#e8e2d0');
-      tryPaint('building',         'fill-color', '#ddd7c8');
-      tryPaint('building',         'fill-opacity', 0.6);
+      tryPaint('landuse',          'fill-color', '#e9e3ce');
+      tryPaint('building',         'fill-color', '#dcd6c4');
+      tryPaint('building',         'fill-opacity', 0.55);
+      tryPaint('background',       'background-color', '#efe9d0');
     } catch(e) { /* best-effort */ }
 
     // Fetch Istanbul metro GeoJSON (already in the project)
