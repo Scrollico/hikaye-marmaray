@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Raylarda Kriz — Marmaray'da İntihar Vakalarının Anatomisi</title>
-<meta property="og:title" content="Raylarda Kriz">
+<title>Marmaray İntiharları — Dört Yılda 29 Olay, 20 Ölüm</title>
+<meta property="og:title" content="Marmaray İntiharları">
 <meta property="og:description" content="Marmaray'da 2021'den bu yana yaşanan intihar vakalarının belgelenmiş tarihi. 29 vaka, 20 ölü.">
 <meta name="description" content="Marmaray hattında 2021–2025 yılları arasında kaydedilen 29 intihar ve intihar girişiminin veri gazeteciliği analizi.">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
@@ -298,28 +298,38 @@ body {
   margin-top: .45rem;
 }
 .stat-callout {
-  background: var(--bg2);
-  border-radius: 12px;
-  padding: 1.4rem 1.8rem;
-  margin: 2rem 0;
+  background: #efe9d0;
+  border-radius: 16px;
+  padding: 28px;
+  margin: 2rem auto;
   display: flex;
-  gap: 2rem;
+  gap: 32px;
+  align-items: flex-start;
+  max-width: 480px;
+  border: 1px solid rgba(42,35,32,0.08);
+}
+.stat-callout > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  flex-wrap: wrap;
+  gap: 8px;
 }
 .stat-callout .stat-num {
   font-family: 'Source Serif 4', serif;
-  font-size: 2.8rem;
+  font-size: clamp(3rem, 8vw, 3.5rem);
   font-weight: 700;
   color: var(--charcoal);
   line-height: 1;
+  text-align: center;
 }
 .stat-callout .stat-label {
   font-family: 'DM Sans', sans-serif;
-  font-size: .88rem;
+  font-size: .875rem;
   color: var(--muted);
-  line-height: 1.5;
-  flex: 1;
+  line-height: 1.4;
+  text-align: center;
+  max-width: 18ch;
 }
 .separator {
   width: 48px;
@@ -569,8 +579,8 @@ body {
     <div class="dactilo-line" id="dac-l3"></div>
   </div>
   <div class="cin-title-layer" id="cin-title-layer">
-    <h1 class="cin-main-title">Raylarda<br><span>Kriz</span></h1>
-    <p class="cin-sub-title">Marmaray'da 2021'den bu yana yaşanan intihar vakalarının belgelenmiş tarihi</p>
+    <h1 class="cin-main-title">Marmaray<br><span>İntiharları</span></h1>
+    <p class="cin-sub-title">Dört yılda 29 olay, 20 ölüm. Bir veri hikayesi.</p>
   </div>
   <div class="cin-scroll-cue" id="cin-cue">
     <span>Aşağı kaydır</span>
@@ -607,11 +617,11 @@ body {
   <div class="stat-callout">
     <div>
       <div class="stat-num">29</div>
-      <div class="stat-label">2021–2025 yılları arasında<br>Marmaray'da kayıtlara geçen<br>intihar ve intihar girişimi</div>
+      <div class="stat-label">2021–2025 yılları arasında Marmaray'da kayıtlara geçen intihar ve intihar girişimi</div>
     </div>
     <div>
       <div class="stat-num">20</div>
-      <div class="stat-label">hayatını kaybetti<br><span style="font-size:.8rem">Her üç vakadan ikisi</span></div>
+      <div class="stat-label">hayatını kaybetti — her üç vakadan ikisi</div>
     </div>
   </div>
 
@@ -837,8 +847,8 @@ const DATA = {
   ],
   communication: [
     {d:'Duyurdu',v:23,c:'#16a34a'},
-    {d:'Önce duyurdu,\nsonra sildi',v:4,c:'#b55a0a'},
-    {d:'Hiç\nduyurmadı',v:2,c:'#374152'}
+    {d:'Önce duyurup\nsonra sildi',v:4,c:'#b55a0a'},
+    {d:'Hiç\nduyurmadı',v:2,c:'#6b7280'}
   ],
   words: [
     {k:'marmaray',n:21,hl:false},{k:'nedeniyle',n:21,hl:false},{k:'üzücü',n:19,hl:'orange'},
@@ -1427,6 +1437,7 @@ function drawState(idx) {
 
   viz.selectAll('g.state').interrupt().selectAll('*').interrupt();
   viz.selectAll('g.state').remove();
+  viz.selectAll('defs').remove();
   const g = viz.append('g').attr('class','state').attr('opacity',0);
   g.transition().duration(340).ease(d3.easeCubicOut).attr('opacity',1);
 
@@ -1925,72 +1936,95 @@ function drawState(idx) {
   }
 
   // ─────────────────────────────────────────────
-  // STATE 6: Communication audit — stacked view
+  // STATE 6: Communication audit — horizontal stacked bar
   // ─────────────────────────────────────────────
   else if (idx === 6) {
     const data = DATA.communication;
     const total = 29;
-    const cg = g.append('g').attr('transform',`translate(${isMobile?20:80},60)`);
-    const W2 = isMobile ? vbW-50 : 640, barH = 52, gap = 28;
+    const padL = isMobile ? 16 : 80, padR = isMobile ? 16 : 80;
+    const W2 = vbW - padL - padR;
+    const barH = 68, barY = isMobile ? 115 : 105;
+    const COLORS = ['#16a34a', '#b55a0a', '#6b7280'];
 
-    // Header
-    cg.append('text').attr('x',W2/2).attr('y',-20)
-      .attr('text-anchor','middle').attr('fill',C.text)
-      .attr('font-size',13).attr('font-weight','600').attr('font-family','DM Sans')
-      .text('29 vakanın Marmaray\'ın resmi hesabında işlenme biçimi');
+    const cg = g.append('g').attr('transform', `translate(${padL}, 40)`);
+
+    // Hatch pattern for "deleted" segment
+    const defs = viz.append('defs');
+    const pat = defs.append('pattern')
+      .attr('id','hatch-del').attr('patternUnits','userSpaceOnUse')
+      .attr('width',7).attr('height',7).attr('patternTransform','rotate(45)');
+    pat.append('rect').attr('width',7).attr('height',7).attr('fill','#b55a0a');
+    pat.append('line').attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',7)
+      .attr('stroke','rgba(255,255,255,0.35)').attr('stroke-width',2.5);
+    const fills = ['#16a34a', 'url(#hatch-del)', '#6b7280'];
 
     let xOff = 0;
-    data.forEach((d,i) => {
-      const pct = d.v / total;
-      const bw = W2 * pct;
-      const col = d.c;
+    data.forEach((d, i) => {
+      const bw = W2 * d.v / total;
+      const col = COLORS[i];
+      const rx = i === 0 ? 5 : (i === 2 ? 5 : 0);
+      const rxArr = i === 0 ? [5,0,0,5] : (i === 2 ? [0,5,5,0] : [0,0,0,0]);
 
-      cg.append('rect')
-        .attr('x',xOff).attr('y',50).attr('width',0).attr('height',barH).attr('rx',0)
-        .attr('fill',col).attr('opacity',0.82)
-        .transition().duration(700).delay(i*180)
-        .attr('width',bw);
+      // Bar segment
+      const rect = cg.append('rect')
+        .attr('x', xOff).attr('y', barY)
+        .attr('width', 0).attr('height', barH)
+        .attr('rx', rx)
+        .attr('fill', fills[i]);
+      rect.transition().duration(700).delay(i * 200).attr('width', bw);
 
-      if (bw > 40) {
-        const lines = d.d.split(',');
-        lines.forEach((ln,li) => {
-          cg.append('text').attr('x',xOff+bw/2).attr('y',50+barH/2+(li-0.3)*16+4)
-            .attr('text-anchor','middle').attr('fill','#fff')
-            .attr('font-size',li===0?11:9).attr('font-weight','600')
-            .attr('font-family','DM Sans').text(ln.trim()).attr('opacity',0)
-            .transition().duration(350).delay(i*180+400).attr('opacity',1);
-        });
+      // Number: inside if bw > 55, otherwise above
+      const inside = bw > 55;
+      const numX = xOff + bw / 2;
+      const numY = inside ? barY + barH / 2 + 9 : barY - 16;
+      const numFill = inside ? '#fff' : col;
+      cg.append('text')
+        .attr('x', numX).attr('y', numY)
+        .attr('text-anchor', 'middle').attr('fill', numFill)
+        .attr('font-size', inside ? 24 : 18).attr('font-weight', '700')
+        .attr('font-family', 'Source Serif 4,serif').text(d.v).attr('opacity', 0)
+        .transition().duration(350).delay(i * 200 + 420).attr('opacity', 1);
+
+      // Tick mark for outside numbers
+      if (!inside) {
+        cg.append('line')
+          .attr('x1', numX).attr('y1', barY - 4)
+          .attr('x2', numX).attr('y2', barY)
+          .attr('stroke', col).attr('stroke-width', 1.5).attr('opacity', 0)
+          .transition().duration(200).delay(i * 200 + 420).attr('opacity', 0.7);
       }
 
-      // Value below
-      cg.append('text').attr('x',xOff+bw/2).attr('y',50+barH+22)
-        .attr('text-anchor','middle').attr('fill',col)
-        .attr('font-size',20).attr('font-weight','700').attr('font-family','Source Serif 4,serif')
-        .text(d.v).attr('opacity',0)
-        .transition().duration(350).delay(i*180+500).attr('opacity',1);
-      cg.append('text').attr('x',xOff+bw/2).attr('y',50+barH+40)
-        .attr('text-anchor','middle').attr('fill',C.muted)
-        .attr('font-size',9).attr('font-family','DM Sans')
-        .text('vaka').attr('opacity',0)
-        .transition().duration(350).delay(i*180+550).attr('opacity',0.8);
+      // Label lines below bar
+      const labelLines = d.d.split('\n');
+      labelLines.forEach((ln, li) => {
+        cg.append('text')
+          .attr('x', numX).attr('y', barY + barH + 16 + li * 13)
+          .attr('text-anchor', 'middle').attr('fill', col)
+          .attr('font-size', isMobile ? 9 : 10).attr('font-weight', '500')
+          .attr('font-family', 'DM Sans').text(ln.trim()).attr('opacity', 0)
+          .transition().duration(350).delay(i * 200 + 500).attr('opacity', 0.88);
+      });
 
       xOff += bw;
     });
 
-    // Annotation: deleted
-    const delX = data[0].v / total * W2;
-    cg.append('text').attr('x',delX+data[1].v/total*W2/2).attr('y',50-12)
-      .attr('text-anchor','middle').attr('fill',C.orange)
-      .attr('font-size',10).attr('font-weight','600').attr('font-family','DM Sans')
-      .text('4 duyuru silindi').attr('opacity',0)
-      .transition().duration(400).delay(900).attr('opacity',1);
+    // Annotation above deleted segment
+    const seg0W = W2 * data[0].v / total;
+    const seg1W = W2 * data[1].v / total;
+    cg.append('text')
+      .attr('x', seg0W + seg1W / 2).attr('y', barY - 38)
+      .attr('text-anchor', 'middle').attr('fill', '#b55a0a')
+      .attr('font-size', 10).attr('font-weight', '600').attr('font-family', 'DM Sans')
+      .text('4 duyuru sonradan silindi').attr('opacity', 0)
+      .transition().duration(400).delay(900).attr('opacity', 1);
 
     // Bottom note
-    cg.append('text').attr('x',W2/2).attr('y',50+barH+80)
-      .attr('text-anchor','middle').attr('fill',C.muted)
-      .attr('font-size',11).attr('font-style','italic').attr('font-family','DM Sans')
-      .text('Mayıs 2023\'ten sonra "intihar" kelimesi hiç kullanılmadı').attr('opacity',0)
-      .transition().duration(400).delay(1100).attr('opacity',1);
+    cg.append('text')
+      .attr('x', W2 / 2).attr('y', barY + barH + 58)
+      .attr('text-anchor', 'middle').attr('fill', C.muted)
+      .attr('font-size', isMobile ? 9 : 11).attr('font-style', 'italic').attr('font-family', 'DM Sans')
+      .text("Mayıs 2023'ten sonra \u201cintihar\u201d kelimesi hiç kullanılmadı").attr('opacity', 0)
+      .transition().duration(400).delay(1100).attr('opacity', 1);
   }
 
   // ─────────────────────────────────────────────
@@ -2321,10 +2355,6 @@ function updatePanelPosition() {
 
   if (newActive !== _activeScrolly) {
     _activeScrolly = newActive;
-    if (newActive) {
-      const idx = firstStepIdx(newActive);
-      if (!isNaN(idx)) drawState(idx);
-    }
   }
 
   vizPanel.style.transform = `translate3d(0, ${Math.round(offset)}px, 0)`;
