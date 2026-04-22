@@ -9,19 +9,20 @@
 <meta name="description" content="Marmaray hattında 2021–2025 yılları arasında kaydedilen 29 intihar ve intihar girişiminin veri gazeteciliği analizi.">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600;8..60,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600;8..60,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
 
 /* ── Tokens ── */
 :root {
-  --bg:     #f8f5f0;
-  --bg2:    #ede9e3;
-  --text:   #1c1917;
-  --muted:  #78716c;
+  --bg:     #f8f5e4;
+  --bg2:    #eeedf5;
+  --text:   #1c1c1c;
+  --muted:  #6b7280;
   --accent: #b52b27;
   --blue:   #1e5f8a;
-  --green:  #276749;
-  --card:   rgba(255,255,255,.62);
-  --border: rgba(28,25,23,.10);
+  --green:  #16a34a;
+  --purple: #8080FF;
+  --card:   rgba(255,255,255,.68);
+  --border: rgba(55,65,82,.10);
 }
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box }
 html { scroll-behavior:smooth }
@@ -52,7 +53,7 @@ body {
   position: fixed;
   top: 0; left: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--accent), var(--blue));
+  background: linear-gradient(90deg, #374152, #8080FF);
   z-index: 999;
   transition: width .15s;
   border-radius: 0 2px 2px 0;
@@ -60,7 +61,7 @@ body {
 }
 
 /* ════════════════════════════════════════
-   CINEMATIC INTRO
+   TYPEWRITER INTRO
 ════════════════════════════════════════ */
 .cin-intro {
   position: relative;
@@ -69,64 +70,57 @@ body {
   overflow: hidden;
   background: var(--bg);
   z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 .cin-brand {
   position: absolute;
-  left: 0; right: 0;
+  top: 1.8rem; left: 0; right: 0;
   text-align: center;
   font-family: 'DM Sans', sans-serif;
   font-weight: 600;
   letter-spacing: .18em;
   text-transform: uppercase;
-  opacity: 0;
-  z-index: 5;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: clamp(.8rem, 1.8vw, 1.1rem);
-  color: var(--text);
-  transition: top .9s cubic-bezier(.4,0,.2,1),
-              transform .9s cubic-bezier(.4,0,.2,1),
-              font-size .9s ease,
-              color .9s ease,
-              opacity .7s ease;
-}
-.cin-brand.settled {
-  top: 1.8rem;
-  transform: translateY(0);
   font-size: .68rem;
   color: var(--muted);
-}
-.cin-svg-wrap {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 58%;
-  z-index: 1;
-}
-.cin-svg-wrap svg { width:100%; height:100%; display:block }
-.cin-text-layer {
-  position: absolute;
-  left: 0; right: 0;
-  top: 58%; height: 32%;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-.cin-line {
-  font-family: 'Source Serif 4', serif;
-  color: var(--text);
   opacity: 0;
-  position: absolute;
-  text-align: center;
-  max-width: 68vw;
-  line-height: 1.55;
+  transition: opacity .7s ease;
+  z-index: 5;
 }
-.cin-l1, .cin-l2 { font-size: clamp(1.1rem,2.2vw,1.6rem); font-weight:400; color:var(--muted) }
-.cin-l3, .cin-l5 { font-size: clamp(1.2rem,2.5vw,1.75rem); font-weight:600; color:var(--text) }
-.cin-l4          { font-size: clamp(1.1rem,2.2vw,1.55rem); font-weight:400; color:var(--muted) }
-.cin-l6          { font-size: clamp(1.3rem,2.8vw,1.9rem);  font-weight:700; color:var(--accent); letter-spacing:-.01em }
-
+.dactilo-stage {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.2rem;
+  width: min(620px, 88vw);
+  padding: 0 1.5rem;
+}
+.dactilo-line {
+  font-family: 'Courier Prime', 'Courier New', monospace;
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  color: var(--text);
+  line-height: 1.55;
+  min-height: 1.6em;
+  white-space: pre-wrap;
+}
+.dactilo-line.dim { color: var(--muted); }
+.dactilo-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background: var(--text);
+  vertical-align: text-bottom;
+  margin-left: 1px;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink {
+  0%,100% { opacity: 1 }
+  50%      { opacity: 0 }
+}
 .cin-title-layer {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -149,7 +143,12 @@ body {
   letter-spacing: -.03em;
   margin-bottom: .8rem;
 }
-.cin-main-title span { color: var(--accent) }
+.cin-main-title span {
+  background: linear-gradient(135deg, #374152, #8080FF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 .cin-sub-title {
   font-family: 'DM Sans', sans-serif;
   font-size: clamp(.85rem, 1.7vw, 1.1rem);
@@ -172,8 +171,8 @@ body {
 }
 .cin-scroll-cue .arr {
   width: 14px; height: 14px;
-  border-right: 2px solid var(--accent);
-  border-bottom: 2px solid var(--accent);
+  border-right: 2px solid var(--purple);
+  border-bottom: 2px solid var(--purple);
   transform: rotate(45deg);
   animation: bob 2s ease-in-out infinite;
 }
@@ -324,9 +323,9 @@ body {
   opacity: .8;
 }
 .b-scale  { background:#dce8f5; color:#1e5f8a }
-.b-geo    { background:#ede0f5; color:#7e3fa0 }
+.b-geo    { background:#e8e8ff; color:#8080FF }
 .b-comms  { background:#fde8d0; color:#b55a0a }
-.b-metro  { background:#d4f0e8; color:#1a6648 }
+.b-metro  { background:#d4f0e8; color:#16a34a }
 .b-global { background:#fde8e8; color:#b52b27 }
 
 .sc h3 {
@@ -442,9 +441,7 @@ body {
 ════════════════════════════════════════ */
 @media (max-width: 900px) {
   .cin-main-title  { font-size: clamp(1.9rem, 9vw, 2.9rem) }
-  .cin-svg-wrap    { height: 48% }
-  .cin-text-layer  { top: 48%; height: 40% }
-  .cin-line        { max-width: 88vw }
+  .dactilo-line    { font-size: clamp(.9rem, 3.5vw, 1.1rem) }
 
   .crisis-bar { font-size: .6rem; padding: .4rem .75rem }
 
@@ -504,17 +501,13 @@ body {
 
 <div class="progress" id="prog"></div>
 
-<!-- ════════════════════ CINEMATIC INTRO ════════════════════ -->
+<!-- ════════════════════ TYPEWRITER INTRO ════════════════════ -->
 <section class="cin-intro" id="cin-intro">
   <div class="cin-brand" id="cin-brand">Ali Safa Korkut · Veri Gazeteciliği</div>
-  <div class="cin-svg-wrap"><svg id="cin-svg"></svg></div>
-  <div class="cin-text-layer" id="cin-text-layer">
-    <div class="cin-line cin-l1">30 Ekim 2021. Saat 18:18. Bostancı İstasyonu.</div>
-    <div class="cin-line cin-l2">Tren yavaşlarken. Sıradan bir salı. Sıradan bir akşam.</div>
-    <div class="cin-line cin-l3">2021: 2 vaka. 2022: 3. 2023: 7. 2024: 13.</div>
-    <div class="cin-line cin-l4">Her yıl bir öncekinden fazla. Her yıl daha sık.</div>
-    <div class="cin-line cin-l5">29 kayıt. 20 hayatını kaybetti. Sayılabilenler.</div>
-    <div class="cin-line cin-l6">Bu hikâye, sessizce büyüyen bir krizin anatomisi.</div>
+  <div class="dactilo-stage" id="dactilo-stage">
+    <div class="dactilo-line dim" id="dac-l1"></div>
+    <div class="dactilo-line" id="dac-l2"></div>
+    <div class="dactilo-line" id="dac-l3"></div>
   </div>
   <div class="cin-title-layer" id="cin-title-layer">
     <h1 class="cin-main-title">Raylarda<br><span>Kriz</span></h1>
@@ -726,6 +719,48 @@ body {
   </div>
 </section>
 
+<!-- ════════════════════ SCROLLY 6: METRO HARİTASI ════════════════════ -->
+<section class="editorial">
+  <div class="separator"></div>
+  <div class="kicker">Coğrafya · İstasyon Haritası</div>
+  <h2>Harita üzerinde: Her istasyon bir hikâye</h2>
+  <p>Marmaray, Avrupa ile Anadolu'yu birbirine bağlayan tek metro hattı. 76 kilometre, 40 istasyon, iki kıta. Ve bazı duraklar diğerlerinden daha ağır bir sessizlik taşıyor.</p>
+</section>
+
+<section class="scrolly" id="scrolly-6">
+  <div class="scrolly__steps" id="steps-6">
+
+    <div class="step" data-step="12">
+      <div class="sc">
+        <div class="badge b-metro">Hat Haritası</div>
+        <h3>Marmaray, 2013'te açılan İstanbul'un 76 km'lik denizaltı tünelli metro hattı. Halkalı'dan Gebze'ye her gün yaklaşık 500 bin yolcu taşıyor.</h3>
+      </div>
+    </div>
+
+    <div class="step" data-step="13">
+      <div class="sc">
+        <div class="badge b-geo">Olay İstasyonları</div>
+        <h3>Kayıtlara geçen 29 vakadan ölümle sonuçlananlar en çok Yenikapı (6), Bostancı (3) ve Ayrılık Çeşmesi (3) istasyonlarında yaşandı. Daire büyüklüğü ölü sayısını gösteriyor.</h3>
+      </div>
+    </div>
+
+    <div class="step" data-step="14">
+      <div class="sc">
+        <div class="badge b-geo">Yenikapı</div>
+        <h3>Yenikapı, kayıtlı ölümlerin yüzde otuzunu barındıran merkez. Avrupa yakasında, hem M1 hem M2 hatlarıyla aktarma noktası — yüksek yolcu yoğunluğu riski artırıyor.</h3>
+      </div>
+    </div>
+
+    <div class="step" data-step="15">
+      <div class="sc">
+        <div class="badge b-geo">Bostancı · 30 Ekim 2021</div>
+        <h3>Her şey Bostancı İstasyonu'nda başladı. Saat 18:18. Sonraki dört yılda dört farklı istasyonda üç ölümlü vaka daha yaşandı. Harita büyüdükçe, kriz de büyüdü.</h3>
+      </div>
+    </div>
+
+  </div>
+</section>
+
 <!-- ════════════════════ OUTRO ════════════════════ -->
 <section class="outro">
   <h2>Veri burada bitiyor — kriz bitmiyor</h2>
@@ -811,261 +846,82 @@ const DATA = {
 
 // ── Color constants ──
 const C = {
-  accent: '#b52b27', blue: '#1e5f8a', green: '#276749',
-  orange: '#b55a0a', purple: '#7e3fa0',
-  muted: '#78716c', text: '#1c1917', bg: '#f8f5f0',
-  gridLine: '#e0dbd5'
+  accent: '#b52b27', blue: '#1e5f8a', green: '#16a34a',
+  orange: '#b55a0a', purple: '#8080FF',
+  muted: '#6b7280', text: '#1c1c1c', bg: '#f8f5e4',
+  gridLine: '#dde0ec'
 };
 
 // ═══════════════════════════════════════════════════════════
-// CINEMATIC INTRO
+// TYPEWRITER INTRO
 // ═══════════════════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => {
-  const W = window.innerWidth;
-  const H = window.innerHeight * 0.58;
-  const svg = d3.select('#cin-svg').attr('viewBox', `0 0 ${W} ${H}`);
-
-  const particleData = [
-    // Stations (6) — accent red
-    {text:'Yenikapı',   cat:'s', sz:1.4},
-    {text:'Bostancı',   cat:'s', sz:1.2},
-    {text:'Ayrılık Çeşmesi', cat:'s', sz:1.1},
-    {text:'Üsküdar',    cat:'s', sz:1.1},
-    {text:'Feneryolu',  cat:'s', sz:0.95},
-    {text:'Zeytinburnu',cat:'s', sz:0.9},
-    // Years (5) — muted
-    {text:'2021', cat:'y', sz:1.0},
-    {text:'2022', cat:'y', sz:1.0},
-    {text:'2023', cat:'y', sz:1.1},
-    {text:'2024', cat:'y', sz:1.35},
-    {text:'2025', cat:'y', sz:0.95},
-    // Keywords (10) — blue
-    {text:'intihar',    cat:'k', sz:0.95},
-    {text:'vaka',       cat:'k', sz:0.88},
-    {text:'tren',       cat:'k', sz:0.88},
-    {text:'raylar',     cat:'k', sz:0.82},
-    {text:'istasyon',   cat:'k', sz:0.82},
-    {text:'sabah',      cat:'k', sz:0.8},
-    {text:'Cumartesi',  cat:'k', sz:0.82},
-    {text:'hat',        cat:'k', sz:0.78},
-    {text:'Marmaray',   cat:'k', sz:1.05},
-    {text:'metro',      cat:'k', sz:0.82},
-    // Numbers (9) — accent
-    {text:'29',   cat:'n', sz:1.55},
-    {text:'20',   cat:'n', sz:1.4},
-    {text:'13',   cat:'n', sz:1.3},
-    {text:'%69',  cat:'n', sz:1.1},
-    {text:'9',    cat:'n', sz:1.05},
-    {text:'×6.5', cat:'n', sz:1.05},
-    {text:'18',   cat:'n', sz:0.92},
-    {text:'4',    cat:'n', sz:0.88},
-    {text:'2',    cat:'n', sz:0.88}
+(function dactiloIntro() {
+  const LINES = [
+    { el: 'dac-l1', text: 'Bostancı. 30 Ekim 2021. 18:18.',     delay: 600  },
+    { el: 'dac-l2', text: "Bir kişi Marmaray'a bindi.",          delay: 0    },
+    { el: 'dac-l3', text: 'Ama hiçbir yere varmadı.',            delay: 0    },
   ];
+  const CHAR_MS   = 55;
+  const LINE_GAP  = 700;
+  const TITLE_LAG = 1800;
 
-  const catColor = {s: C.accent, y: C.muted, k: C.blue, n: C.orange};
-  const BASE_FS = Math.max(14, Math.min(W * 0.032, 22));
-
-  const nodes = particleData.map(d => ({
-    ...d,
-    x: W * 0.1 + Math.random() * W * 0.8,
-    y: H * 0.1 + Math.random() * H * 0.8,
-    tx: null, ty: null
-  }));
-
-  const gNodes = svg.append('g');
-  const gOver  = svg.append('g');
-
-  const nodeGrps = gNodes.selectAll('g').data(nodes).join('g')
-    .attr('transform', d => `translate(${d.x},${d.y})`);
-
-  nodeGrps.append('text')
-    .attr('text-anchor','middle').attr('dominant-baseline','central')
-    .attr('font-family', d => d.cat==='n' ? "'Source Serif 4',serif" : "'DM Sans',sans-serif")
-    .attr('font-size',   d => `${BASE_FS * d.sz * 0.3}px`)
-    .attr('font-weight', d => (d.cat==='s'||d.cat==='n') ? '700' : '500')
-    .attr('fill', d => catColor[d.cat])
-    .attr('opacity', 0)
-    .style('paint-order','stroke')
-    .style('stroke', 'rgba(248,245,240,0.92)')
-    .style('stroke-width','3px')
-    .text(d => d.text);
-
-  const sim = d3.forceSimulation(nodes).alphaDecay(0.025).velocityDecay(0.38).stop();
-  sim.on('tick', () => nodeGrps.attr('transform', d => `translate(${d.x},${d.y})`));
-
-  // Phase 0: gentle float
-  function phase0() {
-    nodeGrps.select('text')
-      .transition().duration(900)
-      .attr('opacity', d => d.cat==='s' ? 0.5 : (d.cat==='y' ? 0.2 : 0.0))
-      .attr('font-size', d => `${BASE_FS * d.sz * 0.52}px`);
-    sim.force('x', d3.forceX(W/2).strength(0.012))
-       .force('y', d3.forceY(H/2).strength(0.012))
-       .force('collide', d3.forceCollide(d => BASE_FS*d.sz*0.55+6).strength(0.5))
-       .force('charge', d3.forceManyBody().strength(-8))
-       .alpha(0.5).restart();
-  }
-
-  // Phase 1: train track lines + years pulse
-  function phase1() {
-    [H*0.22, H*0.5, H*0.76].forEach((y,i) => {
-      gOver.append('line').attr('class','cin-wire')
-        .attr('x1',-20).attr('y1',y).attr('x2',-20).attr('y2',y)
-        .attr('stroke',C.muted).attr('stroke-width',1.2)
-        .attr('stroke-dasharray','18 8').attr('opacity',0.22)
-        .transition().duration(800).delay(i*180).attr('x2',W+20);
-    });
-    nodeGrps.filter(d => d.cat==='y').select('text')
-      .transition().duration(700)
-      .attr('opacity', 0.75).attr('font-size', d => `${BASE_FS*d.sz*0.72}px`);
-    nodeGrps.filter(d => d.cat==='k'||d.cat==='n').select('text')
-      .transition().duration(400).attr('opacity', 0);
-    sim.force('x', d3.forceX(W/2).strength(0.018))
-       .force('y', d3.forceY(H/2).strength(0.018))
-       .alpha(0.3).restart();
-  }
-
-  // Phase 2: station names snap into position
-  function phase2() {
-    gOver.selectAll('.cin-wire').transition().duration(350).attr('opacity',0).remove();
-    sim.stop();
-    const sNodes = nodes.filter(d => d.cat==='s');
-    const isMobileIntro = W < 640;
-    if (isMobileIntro) {
-      // 2-row layout: 3 per row, prevent overlap
-      const cols = 3, sp = W / (cols + 1);
-      sNodes.forEach((d,i) => {
-        d.tx = sp * ((i % cols) + 1);
-        d.ty = H * (i < cols ? 0.3 : 0.58);
-      });
-    } else {
-      const sp = Math.min(W * 0.14, 120);
-      const total = (sNodes.length-1)*sp;
-      sNodes.forEach((d,i) => { d.tx = W/2 - total/2 + i*sp; d.ty = H*0.4; });
-    }
-    nodeGrps.filter(d => d.cat==='s')
-      .transition().duration(950).ease(d3.easeCubicInOut)
-      .attr('transform', d => `translate(${d.tx},${d.ty})`);
-    nodeGrps.filter(d => d.cat==='s').select('text')
-      .transition().duration(950)
-      .attr('font-size', d => `${BASE_FS * d.sz * (isMobileIntro ? 0.78 : 1.0)}px`)
-      .attr('opacity', 0.85);
-    nodeGrps.filter(d => d.cat!=='s').select('text')
-      .transition().duration(500).attr('opacity', 0);
-  }
-
-  // Phase 3: numbers surge forward
-  function phase3() {
-    sim.stop();
-    const nNodes = nodes.filter(d => d.cat==='n');
-    nNodes.forEach((d,i) => {
-      d.tx = W*0.12 + (i/nNodes.length)*W*0.76;
-      d.ty = H * 0.45;
-    });
-    nodeGrps.filter(d => d.cat==='n')
-      .transition().duration(1000).ease(d3.easeCubicOut)
-      .attr('transform', d => `translate(${d.tx||d.x},${d.ty||d.y})`);
-    nodeGrps.filter(d => d.cat==='n').select('text')
-      .transition().duration(1000)
-      .attr('font-size', d => `${BASE_FS*d.sz*0.85}px`).attr('opacity', 0.88);
-    nodeGrps.filter(d => d.cat==='s').select('text')
-      .transition().duration(500).attr('opacity', 0.15);
-  }
-
-  // Phase 4: disruption — dim all
-  function phase4() {
-    nodeGrps.select('text')
-      .transition().duration(600).attr('opacity', 0.08).attr('fill', C.muted);
-  }
-
-  // Phase 5: sparkline of yearly growth
-  function phase5() {
-    nodeGrps.select('text').transition().duration(500).attr('opacity', 0);
-    const pts = [{y:2021,v:2},{y:2022,v:3},{y:2023,v:7},{y:2024,v:13}];
-    const cX=W*0.12, cW=W*0.76, cY=H*0.62, cH=H*0.22;
-    const xS = i => cX + (i/3)*cW;
-    const yS = v => cY + cH*(1-(v-0)/14);
-
-    gOver.append('line').attr('class','cin-spark')
-      .attr('x1',cX).attr('y1',yS(7)).attr('x2',cX+cW).attr('y2',yS(7))
-      .attr('stroke',C.muted).attr('stroke-width',1).attr('stroke-dasharray','5 4').attr('opacity',0)
-      .transition().duration(350).delay(150).attr('opacity',0.3);
-
-    pts.forEach((d,i) => {
-      const cx = xS(i), cy = yS(d.v);
-      if (i > 0) {
-        const px=xS(i-1), py=yS(pts[i-1].v);
-        gOver.append('line').attr('class','cin-spark')
-          .attr('x1',px).attr('y1',py).attr('x2',px).attr('y2',py)
-          .attr('stroke',C.accent).attr('stroke-width',2.5).attr('opacity',0.8)
-          .transition().duration(280).delay(200+i*120).attr('x2',cx).attr('y2',cy);
-      }
-      gOver.append('circle').attr('class','cin-spark')
-        .attr('cx',cx).attr('cy',cy).attr('r',0)
-        .attr('fill',C.accent).attr('opacity',0.95)
-        .transition().duration(220).delay(220+i*120).attr('r', i===3 ? 7 : 4.5);
-      gOver.append('text').attr('class','cin-spark')
-        .attr('x',cx).attr('y',cy-16).attr('text-anchor','middle')
-        .attr('font-family',"'DM Sans',sans-serif")
-        .attr('font-size',`${BASE_FS*0.75}px`).attr('font-weight','700')
-        .attr('fill',C.accent).text(d.v).attr('opacity',0)
-        .transition().duration(250).delay(300+i*120).attr('opacity',0.9);
-      gOver.append('text').attr('class','cin-spark')
-        .attr('x',cx).attr('y',cY+cH+18).attr('text-anchor','middle')
-        .attr('font-family',"'DM Sans',sans-serif")
-        .attr('font-size',`${BASE_FS*0.6}px`).attr('fill',C.muted).text(d.y).attr('opacity',0)
-        .transition().duration(260).delay(300+i*120).attr('opacity',0.65);
-    });
-  }
-
-  // Phase 6: fade out to title
-  function phase6() {
-    gOver.selectAll('.cin-spark').transition().duration(600).attr('opacity',0).remove();
-    nodeGrps.transition().duration(600).style('opacity',0);
-  }
-
-  // Timeline
-  const lines = document.querySelectorAll('.cin-line');
   const titleLayer = document.getElementById('cin-title-layer');
-  const cue   = document.getElementById('cin-cue');
-  const brand = document.getElementById('cin-brand');
+  const cue        = document.getElementById('cin-cue');
+  const brand      = document.getElementById('cin-brand');
 
-  const timeline = [
-    {el:lines[0], hold:2200, fn:phase1},
-    {el:lines[1], hold:2000, fn:phase2},
-    {el:lines[2], hold:2600, fn:phase3},
-    {el:lines[3], hold:2000, fn:phase4},
-    {el:lines[4], hold:2300, fn:phase5},
-    {el:lines[5], hold:2200, fn:phase6},
-  ];
+  let caretEl = null;
 
-  setTimeout(phase0, 200);
+  function typeInto(elId, text, onDone) {
+    const el = document.getElementById(elId);
+    if (!el) { onDone && onDone(); return; }
+    if (caretEl) caretEl.remove();
+    caretEl = document.createElement('span');
+    caretEl.className = 'dactilo-caret';
+    el.appendChild(caretEl);
+    let i = 0;
+    function tick() {
+      if (i < text.length) {
+        caretEl.insertAdjacentText('beforebegin', text[i]);
+        i++;
+        setTimeout(tick, CHAR_MS + (Math.random() * 20 - 10));
+      } else {
+        onDone && onDone();
+      }
+    }
+    tick();
+  }
 
-  let t = 1000;
-  timeline.forEach(step => {
-    setTimeout(() => { step.el.style.opacity='1'; step.fn(); }, t);
-    t += step.hold + 300;
-    setTimeout(() => { step.el.style.opacity='0'; }, t);
-    t += 150;
-  });
+  const dactiloStage = document.getElementById('dactilo-stage');
 
-  const titleT = t + 400;
-  setTimeout(() => {
-    brand.style.opacity = '1';
-  }, titleT + 500);
-  setTimeout(() => {
-    brand.classList.add('settled');
-  }, titleT + 1600);
-  setTimeout(() => {
-    titleLayer.style.transition = 'opacity 1.1s ease';
-    titleLayer.style.opacity = '1';
-    titleLayer.style.pointerEvents = 'auto';
-  }, titleT + 2400);
-  setTimeout(() => {
-    cue.style.transition = 'opacity .9s ease';
-    cue.style.opacity = '1';
-  }, titleT + 3500);
-});
+  function runLines(idx) {
+    if (idx >= LINES.length) {
+      if (caretEl) { caretEl.style.animation = 'none'; caretEl.style.opacity = '0'; }
+      setTimeout(() => {
+        brand.style.opacity = '1';
+        // Fade out typewriter lines, then fade in title
+        if (dactiloStage) {
+          dactiloStage.style.transition = 'opacity 0.7s ease';
+          dactiloStage.style.opacity    = '0';
+        }
+        setTimeout(() => {
+          titleLayer.style.transition = 'opacity 1.1s ease';
+          titleLayer.style.opacity    = '1';
+          titleLayer.style.pointerEvents = 'auto';
+          setTimeout(() => {
+            cue.style.transition = 'opacity .9s ease';
+            cue.style.opacity    = '1';
+          }, 1200);
+        }, TITLE_LAG);
+      }, 400);
+      return;
+    }
+    const line = LINES[idx];
+    const startNext = () => setTimeout(() => runLines(idx + 1), LINE_GAP);
+    setTimeout(() => typeInto(line.el, line.text, startNext), line.delay);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => setTimeout(() => runLines(0), 500));
+}());
 
 // ═══════════════════════════════════════════════════════════
 // PROGRESS BAR
@@ -1106,7 +962,11 @@ const META = [
   {t:'Metro İstanbul: Hatlara göre vakalar',        s:'2019–2026',                           src:'Derleyen: Ali Safa Korkut'},
   {t:'Günün saatleri: Marmaray – Metro karşılaştırması', s:'',                              src:'Derleyen: Ali Safa Korkut'},
   {t:'AB genelinde tren istasyonu intihar vakaları',s:'Eurostat, 2006–2023',                 src:'Eurostat — Railway Accident Data'},
-  {t:'Kanıtlanmış önlemler: Dünyadan örnekler',     s:'Tokyo, Seul, Londra, Paris',          src:'Çeşitli kaynaklar'}
+  {t:'Kanıtlanmış önlemler: Dünyadan örnekler',     s:'Tokyo, Seul, Londra, Paris',          src:'Çeşitli kaynaklar'},
+  {t:'Marmaray Hattı',                              s:'Halkalı\'dan Gebze\'ye 76.3 km',      src:'OSM · Kaynak: Ali Safa Korkut'},
+  {t:'Olayların gerçekleştiği istasyonlar',         s:'Kayıt altına alınan 29 vakadan 20 ölüm', src:'Derleyen: Ali Safa Korkut'},
+  {t:'Yenikapı: En Fazla Ölümün Yaşandığı İstasyon',s:'6 kayıp — 2021–2025',                src:'Derleyen: Ali Safa Korkut'},
+  {t:'Bostancı: İlk Olayın Yaşandığı İstasyon',    s:'30 Ekim 2021, 18:18',                 src:'Derleyen: Ali Safa Korkut'}
 ];
 
 function drawState(idx) {
@@ -1221,7 +1081,7 @@ function drawState(idx) {
     const W = vbW-m.left-m.right, H = 450-m.top-m.bottom;
     const cg = g.append('g').attr('transform',`translate(${m.left},${m.top})`);
 
-    const yearColor = {2021:'#1e5f8a', 2022:'#276749', 2023:'#b55a0a', 2024:C.accent, 2025:'#7e3fa0'};
+    const yearColor = {2021:'#1e5f8a', 2022:'#16a34a', 2023:'#b55a0a', 2024:C.accent, 2025:'#8080FF'};
 
     const yS = d3.scaleBand().domain(data.map(d=>d.ay)).range([0,H]).padding(0.28);
     const xS = d3.scaleLinear().domain([0,4]).range([0,W]);
@@ -1852,6 +1712,182 @@ function drawState(idx) {
           .attr('text-anchor','middle').attr('fill',C.muted)
           .attr('font-size',10).attr('font-family','DM Sans').text(ln);
       });
+    });
+  }
+
+  // ─────────────────────────────────────────────
+  // STATES 12-15: Istanbul / Marmaray map
+  // ─────────────────────────────────────────────
+  else if (idx >= 12 && idx <= 15) {
+    const mapW = vbW, mapH = 480;
+
+    const stations = [
+      {n:'Halkalı',         lon:28.8196, lat:41.0285, d:0},
+      {n:'Küçükçekmece',    lon:28.7777, lat:41.0089, d:0},
+      {n:'Florya',          lon:28.7569, lat:40.9743, d:0},
+      {n:'Yeşilköy',        lon:28.8164, lat:40.9769, d:0},
+      {n:'Yeşilyurt',       lon:28.8402, lat:40.9822, d:1},
+      {n:'Ataköy',          lon:28.8695, lat:40.9781, d:1},
+      {n:'Yenimahalle',     lon:28.8863, lat:40.9760, d:0},
+      {n:'Zeytinburnu',     lon:28.9010, lat:40.9933, d:0},
+      {n:'Kazlıçeşme',      lon:28.9139, lat:40.9941, d:0},
+      {n:'Yenikapı',        lon:28.9506, lat:41.0047, d:6},
+      {n:'Sirkeci',         lon:28.9748, lat:41.0147, d:0},
+      {n:'Üsküdar',         lon:29.0106, lat:41.0235, d:1},
+      {n:'Ayrılık Çeşmesi', lon:29.0307, lat:41.0183, d:3},
+      {n:'Acıbadem',        lon:29.0440, lat:41.0073, d:0},
+      {n:'Göztepe',         lon:29.0656, lat:40.9755, d:0},
+      {n:'Erenköy',         lon:29.0734, lat:40.9715, d:0},
+      {n:'Bostancı',        lon:29.0969, lat:40.9629, d:3},
+      {n:'Suadiye',         lon:29.1049, lat:40.9566, d:0},
+      {n:'Feneryolu',       lon:29.1235, lat:40.9487, d:2},
+      {n:'Küçükyalı',       lon:29.1435, lat:40.9363, d:0},
+      {n:'Maltepe',         lon:29.1543, lat:40.9297, d:0},
+      {n:'Cevizli',         lon:29.1618, lat:40.9236, d:0},
+      {n:'Atalar',          lon:29.1712, lat:40.9183, d:0},
+      {n:'Kartal',          lon:29.1872, lat:40.9106, d:0},
+      {n:'Pendik',          lon:29.2314, lat:40.8870, d:0},
+      {n:'Tuzla',           lon:29.2983, lat:40.8282, d:1},
+      {n:'Gebze',           lon:29.4300, lat:40.8018, d:0},
+    ];
+
+    const lineCoords = stations.map(s => [s.lon, s.lat]);
+    const lineFeature = {type:'Feature', geometry:{type:'LineString', coordinates: lineCoords}};
+
+    const proj = d3.geoMercator();
+    // Use MultiPoint of target-area stations to avoid geoBounds polygon winding issues
+    function multiPt(coords) {
+      return {type:'Feature', geometry:{type:'MultiPoint', coordinates: coords}};
+    }
+    if (idx === 14) {
+      // Zoom: Zeytinburnu → Üsküdar (Bosphorus crossing + Yenikapı focus)
+      const focus = stations.filter(s =>
+        s.lon >= 28.88 && s.lon <= 29.06 && s.lat >= 40.98
+      ).map(s => [s.lon, s.lat]);
+      proj.fitExtent([[24, 40], [mapW-24, mapH-60]], multiPt(focus));
+    } else if (idx === 15) {
+      // Zoom: Yenikapı → Feneryolu context (key incident stations)
+      const focus = stations.filter(s =>
+        s.lon >= 28.90 && s.lon <= 29.14 && s.lat >= 40.93
+      ).map(s => [s.lon, s.lat]);
+      proj.fitExtent([[24, 40], [mapW-24, mapH-60]], multiPt(focus));
+    } else {
+      proj.fitExtent([[22, 35], [mapW-22, mapH-45]], lineFeature);
+    }
+    const pathGen = d3.geoPath().projection(proj);
+
+    // Split line at tunnel
+    const euroCoords  = stations.slice(0, 11).map(s => [s.lon, s.lat]);
+    const tunnelCoords= stations.slice(10, 12).map(s => [s.lon, s.lat]);
+    const anatCoords  = stations.slice(11).map(s => [s.lon, s.lat]);
+
+    function geoLine(coords) {
+      return {type:'Feature', geometry:{type:'LineString', coordinates: coords}};
+    }
+
+    const lineCol = idx === 12 ? C.muted : '#374152';
+    const lineOp  = idx === 12 ? 0.38 : 0.75;
+    const lineW   = idx === 12 ? 2 : 2.8;
+
+    const lineG = g.append('g');
+
+    if (idx === 13) {
+      // Animated draw: stroke-dasharray trick
+      [euroCoords, anatCoords].forEach((coords, ci) => {
+        const pathEl = lineG.append('path')
+          .attr('d', pathGen(geoLine(coords)))
+          .attr('fill', 'none')
+          .attr('stroke', '#374152').attr('stroke-width', lineW)
+          .attr('stroke-opacity', lineOp).attr('stroke-linecap', 'round');
+        const node = pathEl.node();
+        if (node && node.getTotalLength) {
+          const len = node.getTotalLength();
+          pathEl.attr('stroke-dasharray', `${len} ${len}`)
+            .attr('stroke-dashoffset', len)
+            .transition().duration(1500).delay(ci * 200).ease(d3.easeLinear)
+            .attr('stroke-dashoffset', 0);
+        }
+      });
+    } else {
+      lineG.append('path').attr('d', pathGen(geoLine(euroCoords)))
+        .attr('fill','none').attr('stroke',lineCol)
+        .attr('stroke-width',lineW).attr('stroke-opacity',lineOp).attr('stroke-linecap','round');
+      lineG.append('path').attr('d', pathGen(geoLine(anatCoords)))
+        .attr('fill','none').attr('stroke',lineCol)
+        .attr('stroke-width',lineW).attr('stroke-opacity',lineOp).attr('stroke-linecap','round');
+    }
+    // Tunnel segment: always dashed
+    lineG.append('path').attr('d', pathGen(geoLine(tunnelCoords)))
+      .attr('fill','none').attr('stroke',idx===12?C.muted:'#374152')
+      .attr('stroke-width',lineW).attr('stroke-opacity',idx===12?0.28:0.55)
+      .attr('stroke-dasharray','6 4').attr('stroke-linecap','round');
+
+    // Bosphorus label (states 12-13)
+    if (idx <= 13) {
+      const bos = proj([28.993, 41.019]);
+      if (bos) g.append('text').attr('x',bos[0]).attr('y',bos[1])
+        .attr('text-anchor','middle').attr('fill',C.blue).attr('font-size',8)
+        .attr('font-family','DM Sans').attr('opacity',0.45).text('Boğaz tüneli');
+    }
+
+    // Continent labels (states 12-13)
+    if (idx <= 13) {
+      const eu = proj([28.84, 41.048]); const an = proj([29.22, 41.048]);
+      if (eu) g.append('text').attr('x',eu[0]).attr('y',eu[1]).attr('fill',C.muted)
+        .attr('font-size',8.5).attr('font-family','DM Sans').attr('opacity',0.5)
+        .text('← Avrupa');
+      if (an) g.append('text').attr('x',an[0]).attr('y',an[1]).attr('fill',C.muted)
+        .attr('font-size',8.5).attr('font-family','DM Sans').attr('opacity',0.5)
+        .text('Anadolu →');
+    }
+
+    // Station circles + labels
+    const stG = g.append('g');
+    stations.forEach((s, i) => {
+      const pt = proj([s.lon, s.lat]);
+      if (!pt) return;
+
+      const isIncident = s.d > 0;
+      const isFocus = (idx === 14 && s.n === 'Yenikapı') ||
+                      (idx === 15 && (s.n === 'Bostancı' || s.n === 'Yenikapı'));
+      const showLabel = (idx >= 13 && isIncident) || isFocus;
+
+      const r = idx === 12 ? 2 : (isIncident ? 3 + s.d * 1.3 : 2.2);
+      const col = isIncident ? C.accent : (idx === 12 ? C.muted : '#374152');
+      const op  = idx === 12 ? 0.45 : (isIncident ? 0.88 : 0.38);
+
+      if ((idx === 14 || idx === 15) && isFocus) {
+        stG.append('circle').attr('cx',pt[0]).attr('cy',pt[1]).attr('r',r+6)
+          .attr('fill','none').attr('stroke',C.accent).attr('stroke-width',1.5)
+          .attr('opacity',0).transition().duration(500).delay(80+i*20).attr('opacity',0.4);
+        stG.append('circle').attr('cx',pt[0]).attr('cy',pt[1]).attr('r',r+12)
+          .attr('fill','none').attr('stroke',C.accent).attr('stroke-width',0.8)
+          .attr('opacity',0).transition().duration(700).delay(120+i*20).attr('opacity',0.18);
+      }
+
+      stG.append('circle').attr('cx',pt[0]).attr('cy',pt[1]).attr('r',0)
+        .attr('fill', isIncident ? col : 'none')
+        .attr('stroke', col).attr('stroke-width', isIncident ? 0 : 1)
+        .attr('opacity', op)
+        .transition().duration(280).delay(i * 22)
+        .attr('r', r);
+
+      if (showLabel) {
+        const above = pt[1] > mapH * 0.55;
+        const dy = above ? -(r + 5) : (r + 11);
+        stG.append('text').attr('x',pt[0]).attr('y',pt[1]+dy)
+          .attr('text-anchor','middle').attr('fill',C.accent)
+          .attr('font-size', idx >= 14 ? 10.5 : 8.5).attr('font-weight','700')
+          .attr('font-family','DM Sans').text(s.n).attr('opacity',0)
+          .transition().duration(300).delay(i*22+220).attr('opacity',0.92);
+        if (s.d > 0) {
+          stG.append('text').attr('x',pt[0]).attr('y',pt[1]+dy+(idx>=14?13:11))
+            .attr('text-anchor','middle').attr('fill',C.muted)
+            .attr('font-size', idx >= 14 ? 9 : 7.5).attr('font-family','DM Sans')
+            .text(`${s.d} ölüm`).attr('opacity',0)
+            .transition().duration(300).delay(i*22+340).attr('opacity',0.7);
+        }
+      }
     });
   }
 }
