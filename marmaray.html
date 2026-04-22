@@ -489,6 +489,8 @@ body {
     padding-bottom: 1rem;
   }
   .step:first-child { padding-top: 500px }
+  /* Extra bottom padding keeps section bottom below viewport while last card is active */
+  .scrolly { padding-bottom: 80vh }
 }
 </style>
 </head>
@@ -1315,18 +1317,62 @@ function drawState(idx) {
         .attr('r', r);
 
       if (isIncident) {
-        const above = pt[1] > mapH4 * 0.55;
-        g.append('text').attr('x', pt[0]).attr('y', pt[1] + (above ? -(r+5) : (r+10)))
-          .attr('text-anchor','middle').attr('fill', C.accent)
-          .attr('font-size', s.n==='Yenikapı' ? 10.5 : 8.5)
-          .attr('font-weight','700').attr('font-family','DM Sans')
-          .text(s.n).attr('opacity',0)
-          .transition().duration(300).delay(i*25+260).attr('opacity',0.92);
-        g.append('text').attr('x', pt[0]).attr('y', pt[1] + (above ? -(r+16) : (r+21)))
-          .attr('text-anchor','middle').attr('fill',C.muted)
-          .attr('font-size',7.5).attr('font-family','DM Sans')
-          .text(`${s.d} ölüm`).attr('opacity',0)
-          .transition().duration(300).delay(i*25+360).attr('opacity',0.7);
+        // Mobile: only label stations with d >= 2 (4 stations), combined format
+        // Desktop: show all incident stations with name + count on separate lines
+        const showLabel = isMobile ? s.d >= 2 : true;
+        if (!showLabel) return;
+
+        // Alternate above/below to avoid vertical stacking on mobile
+        // Explicit per-station override for clustered stations
+        const stationAboveMap = { 'Yenikapı': false, 'Ayrılık Çeşmesi': true, 'Bostancı': true, 'Feneryolu': false };
+        const centerX = mapW4 / 2;
+        const nearTop = pt[1] < mapH4 * 0.25;
+        const nearBottom = pt[1] > mapH4 * 0.75;
+        let above;
+        if (isMobile && s.n in stationAboveMap) above = stationAboveMap[s.n];
+        else if (nearTop) above = false;
+        else if (nearBottom) above = true;
+        else above = pt[0] < centerX;
+
+        const labelY = pt[1] + (above ? -(r + 6) : (r + 11));
+        const isTop = s.n === 'Yenikapı';
+
+        if (isMobile) {
+          // Single compact line: "Yenikapı · 6" with white halo
+          // Alternate anchor: odd-indexed labels start, even-indexed end — avoids cluster overlap
+          const mobileOrder = ['Yenikapı','Ayrılık Çeşmesi','Bostancı','Feneryolu'];
+          const mIdx = mobileOrder.indexOf(s.n);
+          const anchor = (mIdx % 2 === 0) ? 'end' : 'start';
+          const xShift = (mIdx % 2 === 0) ? -4 : 4;
+          const labelTxt = `${s.n} · ${s.d}`;
+          g.append('text').attr('x', pt[0] + xShift).attr('y', labelY)
+            .attr('text-anchor', anchor).attr('fill', C.accent)
+            .attr('font-size', isTop ? 10 : 8.5)
+            .attr('font-weight','700').attr('font-family','DM Sans')
+            .style('paint-order','stroke')
+            .style('stroke','rgba(248,245,228,0.92)').style('stroke-width','3px')
+            .text(labelTxt).attr('opacity',0)
+            .transition().duration(300).delay(i*25+260).attr('opacity',1);
+        } else {
+          // Desktop: name line
+          g.append('text').attr('x', pt[0]).attr('y', labelY)
+            .attr('text-anchor','middle').attr('fill', C.accent)
+            .attr('font-size', isTop ? 10.5 : 8.5)
+            .attr('font-weight','700').attr('font-family','DM Sans')
+            .style('paint-order','stroke')
+            .style('stroke','rgba(248,245,228,0.88)').style('stroke-width','2.5px')
+            .text(s.n).attr('opacity',0)
+            .transition().duration(300).delay(i*25+260).attr('opacity',0.92);
+          // count line
+          const countY = labelY + (above ? -11 : 11);
+          g.append('text').attr('x', pt[0]).attr('y', countY)
+            .attr('text-anchor','middle').attr('fill',C.muted)
+            .attr('font-size',7.5).attr('font-family','DM Sans')
+            .style('paint-order','stroke')
+            .style('stroke','rgba(248,245,228,0.88)').style('stroke-width','2px')
+            .text(`${s.d} ölüm`).attr('opacity',0)
+            .transition().duration(300).delay(i*25+360).attr('opacity',0.7);
+        }
       }
     });
   }
