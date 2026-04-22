@@ -8,6 +8,9 @@
 <meta property="og:description" content="Marmaray'da 2021'den bu yana yaşanan intihar vakalarının belgelenmiş tarihi. 29 vaka, 20 ölü.">
 <meta name="description" content="Marmaray hattında 2021–2025 yılları arasında kaydedilen 29 intihar ve intihar girişiminin veri gazeteciliği analizi.">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
+<script src="/mapbox-token.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600;8..60,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
 
@@ -191,17 +194,24 @@ body {
   z-index: 200;
   opacity: 0;
   pointer-events: none;
-  background: var(--bg);
-  transition: opacity 1.1s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: #ede8d5;
+  overflow: hidden;
+}
+#hero-mapbox-container {
+  position: absolute;
+  inset: 0;
 }
 #hero-map-canvas svg {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   display: block;
+  pointer-events: none;
 }
+/* suppress Mapbox branding in cinematic view */
+.mapboxgl-ctrl-logo,
+.mapboxgl-ctrl-attrib { display: none !important; }
 #hero-text {
   position: absolute;
   bottom: 13%;
@@ -217,6 +227,7 @@ body {
   transition: opacity 0.55s ease;
   pointer-events: none;
   z-index: 5;
+  text-shadow: 0 1px 8px rgba(240,235,220,0.9), 0 0 20px rgba(240,235,220,0.7);
 }
 #hero-text strong { font-weight: 700; color: #374152; }
 @media (max-width: 640px) {
@@ -929,8 +940,8 @@ const C = {
 }());
 
 // ═══════════════════════════════════════════════════════════
-// HERO MAP CINEMATIC — typewriter → map → title
-// 5-beat documentary sequence with Istanbul geography
+// HERO MAP CINEMATIC — Mapbox basemap + SVG overlay
+// All layers share one camera; SVG re-projects on every render frame
 // ═══════════════════════════════════════════════════════════
 let _heroMapActive = false;
 function playHeroMap() {
@@ -942,29 +953,61 @@ function playHeroMap() {
   const heroTxt    = document.getElementById('hero-text');
   const titleLayer = document.getElementById('cin-title-layer');
 
-  const cueFn = () => {
+  const endCinematic = () => {
     _heroMapActive = false;
-    const c = document.getElementById('cin-cue');
-    if (c) { c.style.transition = 'opacity .9s ease'; c.style.opacity = '1'; }
+    const cue = document.getElementById('cin-cue');
+    if (cue) { cue.style.transition = 'opacity .9s ease'; cue.style.opacity = '1'; }
   };
 
-  if (!canvas || !svgEl) {
+  // Fallback if Mapbox not available
+  if (!canvas || !svgEl || typeof mapboxgl === 'undefined') {
     if (titleLayer) {
       titleLayer.style.transition = 'opacity 1.1s ease';
-      titleLayer.style.opacity = '1';
+      titleLayer.style.opacity    = '1';
       titleLayer.style.pointerEvents = 'auto';
     }
-    cueFn();
+    endCinematic();
     return;
   }
 
   canvas.style.display = '';
   const isMob = window.innerWidth < 640;
-  const HW    = isMob ? 420 : 800;
-  const HH    = isMob ? 500 : 440;
-  svgEl.setAttribute('viewBox', `0 0 ${HW} ${HH}`);
 
-  // ── Station data (west → east) ─────────────────────────
+  // ── Mapbox container (behind SVG overlay) ─────────────
+  let mbDiv = document.getElementById('hero-mapbox-container');
+  if (!mbDiv) {
+    mbDiv = document.createElement('div');
+    mbDiv.id = 'hero-mapbox-container';
+    canvas.insertBefore(mbDiv, svgEl);
+  } else {
+    if (mbDiv._mbMap) { try { mbDiv._mbMap.remove(); } catch(e){} }
+    mbDiv.innerHTML = '';
+  }
+
+  // ── SVG overlay — pixel-addressed (no viewBox) ────────
+  svgEl.removeAttribute('viewBox');
+  const svg = d3.select(svgEl);
+  svg.selectAll('*').remove();
+
+  // Purple glow filter for Marmaray line
+  const defs = svg.append('defs');
+  const filt = defs.append('filter').attr('id','mb-glow')
+    .attr('x','-60%').attr('y','-60%').attr('width','220%').attr('height','220%');
+  filt.append('feGaussianBlur').attr('in','SourceGraphic').attr('stdDeviation','3.5').attr('result','blur');
+  filt.append('feColorMatrix').attr('in','blur').attr('type','matrix')
+    .attr('values','0 0 0 0 0.50 0 0 0 0 0.50 0 0 0 0 1 0 0 0 0.50 0').attr('result','glow');
+  const feMerge = filt.append('feMerge');
+  feMerge.append('feMergeNode').attr('in','glow');
+  feMerge.append('feMergeNode').attr('in','SourceGraphic');
+
+  // SVG layers (back → front)
+  const metroG   = svg.append('g').attr('id','mb-metro');
+  const lineG    = svg.append('g').attr('id','mb-line');
+  const stationG = svg.append('g').attr('id','mb-stations');
+  const pulseG   = svg.append('g').attr('id','mb-pulses');
+  const lblG     = svg.append('g').attr('id','mb-lbl');
+
+  // ── Station data (Marmaray, west→east) ────────────────
   const HS = [
     {n:'Halkalı',         lon:28.8196, lat:41.0285, d:0},
     {n:'Küçükçekmece',    lon:28.7777, lat:41.0089, d:0},
@@ -995,99 +1038,61 @@ function playHeroMap() {
     {n:'Gebze',           lon:29.4300, lat:40.8018, d:0},
   ];
 
-  const mg       = isMob ? [[15,35],[HW-15,HH-55]] : [[28,38],[HW-28,HH-50]];
-  const lineFeat = {type:'Feature',geometry:{type:'LineString',coordinates:HS.map(s=>[s.lon,s.lat])}};
-  const proj     = d3.geoMercator().fitExtent(mg, lineFeat);
-  const pathGen  = d3.geoPath().projection(proj);
+  // Pre-create station circles (positioned each render frame)
+  const stationEls = HS.map(s => {
+    const r   = s.d > 0 ? (isMob ? 4+s.d*2.0 : 3+s.d*1.5) : (isMob ? 3.5 : 2.5);
+    const col = s.d > 0 ? '#8080FF' : '#374152';
+    const op  = s.d > 0 ? 0.88 : 0.30;
+    const el  = stationG.append('circle')
+      .attr('r', r)
+      .attr('fill',   s.d > 0 ? col : 'none')
+      .attr('stroke', col)
+      .attr('stroke-width', s.d > 0 ? 0 : (isMob ? 1.5 : 1))
+      .attr('opacity', 0).node();
+    return {el, s, op};
+  });
 
-  // ── SVG setup ──────────────────────────────────────────
-  const svg = d3.select(svgEl);
-  svg.selectAll('*').remove();
-
-  // Line glow filter
-  const defs = svg.append('defs');
-  const filt = defs.append('filter').attr('id','hero-line-glow')
-    .attr('x','-40%').attr('y','-40%').attr('width','180%').attr('height','180%');
-  filt.append('feGaussianBlur').attr('in','SourceGraphic').attr('stdDeviation','2.5').attr('result','blur');
-  filt.append('feColorMatrix').attr('in','blur').attr('type','matrix')
-    .attr('values','0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 1  0 0 0 0.6 0').attr('result','purple');
-  const feMerge = filt.append('feMerge');
-  feMerge.append('feMergeNode').attr('in','purple');
-  feMerge.append('feMergeNode').attr('in','SourceGraphic');
-
-  // ── Geography layers (all start at opacity 0) ──────────
-  // Sea of Marmara fill
-  const seaRect = svg.append('rect')
-    .attr('width', HW).attr('height', HH)
-    .attr('fill','#c4d4de').attr('opacity', 0);
-
-  // European land polygon (west of Bosphorus)
-  const euroGeo = {type:'Feature',geometry:{type:'Polygon',coordinates:[[
-    [27.0,42.5],[29.01,42.5],[29.01,41.22],[28.995,41.05],
-    [28.99,41.00],[28.97,40.99],[28.93,40.97],[28.87,40.95],
-    [28.76,40.93],[28.60,40.905],[28.40,40.890],[27.0,40.89],[27.0,42.5]
-  ]]}};
-
-  // Anatolian land polygon (east of Bosphorus)
-  const anatGeo = {type:'Feature',geometry:{type:'Polygon',coordinates:[[
-    [29.05,42.5],[31.0,42.5],[31.0,40.5],[29.52,40.80],
-    [29.32,40.83],[29.16,40.87],[29.06,40.92],[29.04,40.975],
-    [29.02,41.04],[29.03,41.10],[29.04,41.22],[29.05,42.5]
-  ]]}};
-
-  const landFill   = '#e6dfc8';
-  const coastStroke = 'rgba(55,65,82,0.20)';
-
-  const euroPath = svg.append('path').datum(euroGeo).attr('d', pathGen)
-    .attr('fill', landFill).attr('stroke', coastStroke).attr('stroke-width', 1)
-    .attr('opacity', 0);
-  const anatPath = svg.append('path').datum(anatGeo).attr('d', pathGen)
-    .attr('fill', landFill).attr('stroke', coastStroke).attr('stroke-width', 1)
-    .attr('opacity', 0);
-
-  // Geographic labels
-  const geoLblG = svg.append('g').attr('id','hero-geo-lbl');
-
-  const euLblPt  = proj([28.87, 41.10]);
-  const anLblPt  = proj([29.22, 41.08]);
-  const marPt    = proj([28.97, 40.83]);
-
-  const geoLblFs  = isMob ? 10 : 8;
-  const marLblFs  = isMob ? 9  : 7.5;
-
-  if (euLblPt)
-    geoLblG.append('text').attr('x',euLblPt[0]).attr('y',euLblPt[1])
-      .attr('text-anchor','middle').attr('fill','rgba(55,65,82,0.40)')
-      .attr('font-size',geoLblFs).attr('font-family','DM Sans').attr('font-weight','600')
-      .attr('letter-spacing','0.14em').text('AVRUPA').attr('opacity',0);
-  if (anLblPt)
-    geoLblG.append('text').attr('x',anLblPt[0]).attr('y',anLblPt[1])
-      .attr('text-anchor','middle').attr('fill','rgba(55,65,82,0.40)')
-      .attr('font-size',geoLblFs).attr('font-family','DM Sans').attr('font-weight','600')
-      .attr('letter-spacing','0.14em').text('ANADOLU').attr('opacity',0);
-  if (marPt)
-    geoLblG.append('text').attr('x',marPt[0]).attr('y',marPt[1])
-      .attr('text-anchor','middle').attr('fill','rgba(75,105,130,0.60)')
-      .attr('font-size',marLblFs).attr('font-family','DM Sans').attr('font-style','italic')
-      .text('Marmara Denizi').attr('opacity',0);
-
-  // Camera group (zooms) + static labels layer
-  const cam      = svg.append('g').attr('id','hero-cam');
-  const lblLayer = svg.append('g').attr('id','hero-lbl');
-
-  // Rail line
-  const linePath = cam.append('path')
-    .datum(lineFeat).attr('d', pathGen)
+  // Marmaray line path (updated each render frame)
+  const marmarayEl = lineG.append('path')
     .attr('fill','none')
-    .attr('stroke', C.blue).attr('stroke-width', isMob ? 4 : 2.5)
-    .attr('opacity', 0)
-    .attr('filter','url(#hero-line-glow)')
-    .attr('vector-effect','non-scaling-stroke');
+    .attr('stroke','#374152')
+    .attr('stroke-width', isMob ? 3.5 : 3)
+    .attr('stroke-linecap','round').attr('stroke-linejoin','round')
+    .attr('filter','url(#mb-glow)')
+    .attr('opacity', 0).node();
 
-  const totalLen = linePath.node().getTotalLength();
-  linePath.attr('stroke-dasharray', totalLen).attr('stroke-dashoffset', totalLen);
+  // Metro context lines (populated after GeoJSON fetch)
+  const metroLineEls = []; // [{el, coords}]
 
-  // ── Helper functions ───────────────────────────────────
+  // ── Animation state ────────────────────────────────────
+  let mapReady      = false;
+  let lineDrawing   = false;
+  let lineDrawStart = 0;
+  const LINE_DUR    = isMob ? 2300 : 3200;
+  let lineProgress  = 0;
+  const stationShown = new Array(HS.length).fill(false);
+  const pulseRings   = []; // {lon, lat, t0, dur, maxR}
+  let renderActive   = true;
+  let _map           = null;
+
+  // ── Projection helper (uses live Mapbox camera) ────────
+  function project(lon, lat) {
+    if (!_map || !mapReady) return null;
+    try { const p = _map.project([lon, lat]); return [p.x, p.y]; }
+    catch(e) { return null; }
+  }
+
+  function coordsToPath(lonLatArr) {
+    let d = '', first = true;
+    for (let i = 0; i < lonLatArr.length; i++) {
+      const pt = project(lonLatArr[i][0], lonLatArr[i][1]);
+      if (!pt) continue;
+      d += `${first ? 'M' : 'L'}${pt[0].toFixed(1)} ${pt[1].toFixed(1)} `;
+      first = false;
+    }
+    return d.trim();
+  }
+
   function heroText(html) {
     if (!heroTxt) return;
     if (html) {
@@ -1100,163 +1105,214 @@ function playHeroMap() {
     }
   }
 
-  function camZoom(px, py, scale, dur) {
-    const tx = HW/2 - px*scale, ty = HH/2 - py*scale;
-    d3.select('#hero-cam').transition().duration(dur).ease(d3.easeCubicInOut)
-      .attr('transform', `translate(${tx},${ty}) scale(${scale})`);
-  }
-  function camReset(dur) {
-    d3.select('#hero-cam').transition().duration(dur).ease(d3.easeCubicInOut)
-      .attr('transform', 'translate(0,0) scale(1)');
-  }
-  function addPulse(px, py, count) {
-    const n = count || 1;
-    for (let k = 0; k < n; k++) {
-      setTimeout(() => {
-        cam.append('circle')
-          .attr('cx', px).attr('cy', py)
-          .attr('r', isMob ? 9 : 6).attr('fill','none')
-          .attr('stroke','#8080FF').attr('stroke-width', isMob ? 1.8 : 1.2)
-          .attr('opacity', 0.80)
-          .attr('vector-effect','non-scaling-stroke')
-          .transition().duration(1200)
-          .attr('r', isMob ? 32 : 22).attr('opacity', 0)
-          .remove();
-      }, k * 70);
+  function addPulse(lon, lat, count) {
+    for (let k = 0; k < (count || 1); k++) {
+      setTimeout(() => pulseRings.push({
+        lon, lat, t0: performance.now(), dur: 1400, maxR: isMob ? 42 : 28
+      }), k * 80);
     }
   }
 
-  const ykPt = proj([28.9506, 41.0047]); // Yenikapı
-  const boPt = proj([29.0969, 40.9629]); // Bostancı
-  const ZOOM = isMob ? 2.7 : 3.2;
+  // ── Render loop — Mapbox 'render' event pattern ────────
+  // Fires on every Mapbox frame (camera moves, tile loads).
+  // We call map.triggerRepaint() when we need autonomous animation.
+  function onMapRender() {
+    if (!renderActive || !mapReady) return;
+    const now = performance.now();
 
-  // ── Beat timings (desktop=14s  mobile≈11s) ────────────
-  const T = isMob ? {
-    geoFadeDur : 1200,
-    txt1Show   : 700,
-    lineStart  : 2500,  lineDur : 2500,
-    txt1Hide   : 2500,
-    zoomBo     : 5000,  zoomBoDur : 1100,
-    txt3Show   : 5200,
-    pulse3     : 5800,
-    txt3Hide   : 7000,
-    zoomYk     : 7300,  zoomYkDur : 950,
-    txt4Show   : 7500,
-    pulse4     : 7800,
-    txt4Hide   : 8900,
-    zoomOut    : 9100,  zoomOutDur : 750,
-    allPulse   : 9300,
-    txt5Show   : 9100,
-    mapFadeOut : 10400,
-    cueFn      : 11900,
-  } : {
-    geoFadeDur : 1500,
-    txt1Show   : 900,
-    lineStart  : 3000,  lineDur : 3200,
-    txt1Hide   : 3000,
-    zoomBo     : 6200,  zoomBoDur : 1400,
-    txt3Show   : 6500,
-    pulse3     : 7200,
-    txt3Hide   : 8600,
-    zoomYk     : 9100,  zoomYkDur : 1100,
-    txt4Show   : 9300,
-    pulse4     : 9700,
-    txt4Hide   : 10900,
-    zoomOut    : 11100, zoomOutDur : 950,
-    allPulse   : 11400,
-    txt5Show   : 11200,
-    mapFadeOut : 13000,
-    cueFn      : 14600,
-  };
+    // Advance line draw progress
+    if (lineDrawing) {
+      lineProgress = Math.min((now - lineDrawStart) / LINE_DUR, 1);
+      if (lineProgress >= 1) lineDrawing = false;
+    }
 
-  // ── BEAT 1: Geography fades in (t=0) ──────────────────
+    // Marmaray line — progressive westward draw
+    const visCount = Math.max(2, Math.ceil(lineProgress * HS.length));
+    if (lineProgress > 0) {
+      const d = coordsToPath(HS.slice(0, visCount).map(s => [s.lon, s.lat]));
+      if (d) { marmarayEl.setAttribute('d', d); marmarayEl.setAttribute('opacity','0.9'); }
+    }
+
+    // Station circles — appear as line tip passes them
+    stationEls.forEach(({el, s, op}, i) => {
+      if (i / (HS.length - 1) <= lineProgress && !stationShown[i]) stationShown[i] = true;
+      if (stationShown[i]) {
+        const pt = project(s.lon, s.lat);
+        if (pt) { el.setAttribute('cx', pt[0].toFixed(1)); el.setAttribute('cy', pt[1].toFixed(1)); el.setAttribute('opacity', op); }
+      }
+    });
+
+    // Metro context lines — re-project on every camera frame
+    metroLineEls.forEach(({el, coords}) => {
+      const d = coordsToPath(coords);
+      if (d) el.setAttribute('d', d);
+    });
+
+    // Pulse rings — physics-driven expansion
+    const pNode = pulseG.node();
+    pNode.innerHTML = '';
+    const alive = pulseRings.filter(r => now - r.t0 < r.dur);
+    pulseRings.length = 0; pulseRings.push(...alive);
+    alive.forEach(ring => {
+      const t  = (now - ring.t0) / ring.dur;
+      const pt = project(ring.lon, ring.lat);
+      if (!pt) return;
+      const r   = (4 + (1 - Math.pow(1 - t, 2)) * ring.maxR).toFixed(1);
+      const op  = (0.85 * (1 - t)).toFixed(3);
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', pt[0].toFixed(1)); c.setAttribute('cy', pt[1].toFixed(1));
+      c.setAttribute('r', r); c.setAttribute('fill','none');
+      c.setAttribute('stroke','#8080FF'); c.setAttribute('stroke-width','1.5');
+      c.setAttribute('opacity', op);
+      pNode.appendChild(c);
+    });
+
+    if (lineDrawing || pulseRings.length > 0) _map.triggerRepaint();
+  }
+
+  // ── Canvas fade-in ─────────────────────────────────────
   d3.select(canvas).style('opacity', 0).style('pointer-events','none')
-    .transition().delay(100).duration(T.geoFadeDur).ease(d3.easeLinear)
+    .transition().delay(100).duration(1500).ease(d3.easeLinear)
     .style('opacity', 1);
 
-  setTimeout(() => {
-    seaRect .transition().duration(T.geoFadeDur).attr('opacity', 1);
-    euroPath.transition().duration(T.geoFadeDur).attr('opacity', 1);
-    anatPath.transition().duration(T.geoFadeDur).attr('opacity', 1);
-    geoLblG.selectAll('text').transition().duration(700).delay((d,i) => 500 + i*180).attr('opacity', 1);
-  }, 100);
+  // ── Mapbox map ─────────────────────────────────────────
+  mapboxgl.accessToken = window.MAPBOX_TOKEN || '';
 
-  setTimeout(() => {
-    heroText('Her gün <strong>2.2 milyon kişi</strong> Marmaray\'la Boğaz\'ı geçiyor.');
-  }, T.txt1Show);
+  const MAP_CENTER  = [29.10, 40.955];
+  const ZOOM_INIT   = isMob ? 9.5 : 10.2;
+  const ZOOM_CLOSE  = isMob ? 13.5 : 14.5;
+  const PITCH_INIT  = isMob ? 20 : 30;
+  const BEARING     = -8;
 
-  // ── BEAT 2: Line draws west→east (t≈3s) ───────────────
-  setTimeout(() => {
-    heroText(null);
-    linePath.attr('opacity', 0.85)
-      .transition().duration(T.lineDur).ease(d3.easeLinear)
-      .attr('stroke-dashoffset', 0);
+  const map = new mapboxgl.Map({
+    container:        mbDiv,
+    style:            'mapbox://styles/mapbox/light-v11',
+    center:           MAP_CENTER,
+    zoom:             ZOOM_INIT,
+    pitch:            PITCH_INIT,
+    bearing:          BEARING,
+    interactive:      false,
+    attributionControl: false,
+    fadeDuration:     0,
+  });
+  _map = map;
+  mbDiv._mbMap = map;
 
-    HS.forEach((s, i) => {
-      const pt = proj([s.lon, s.lat]);
-      if (!pt) return;
-      const frac  = i / (HS.length - 1);
-      const delay = frac * T.lineDur;
-      const r     = s.d > 0 ? (isMob ? 4+s.d*2.2 : 3+s.d*1.8) : (isMob ? 3.5 : 2.2);
-      const col   = s.d > 0 ? '#8080FF' : C.blue;
-      const op    = s.d > 0 ? 0.85 : 0.32;
-      setTimeout(() => {
-        cam.append('circle')
-          .attr('cx', pt[0]).attr('cy', pt[1]).attr('r', 0)
-          .attr('fill',   s.d > 0 ? col : 'none')
-          .attr('stroke', col).attr('stroke-width', s.d > 0 ? 0 : (isMob ? 1.5 : 1))
-          .attr('opacity', op).attr('vector-effect','non-scaling-stroke')
-          .transition().duration(220).attr('r', r);
-      }, delay);
-    });
-  }, T.lineStart);
+  map.on('render', onMapRender);
 
-  // ── BEAT 3: Zoom Bostancı + pulse (t≈6s) ──────────────
-  if (boPt) {
-    setTimeout(() => camZoom(boPt[0], boPt[1], ZOOM, T.zoomBoDur), T.zoomBo);
+  map.on('load', () => {
+    // Warm palette — mute all labels and road clutter, set water/land colors
+    try {
+      map.getStyle().layers.forEach(lyr => {
+        if (lyr.type === 'symbol')
+          map.setLayoutProperty(lyr.id, 'visibility', 'none');
+        if (lyr.type === 'line' && /road|bridge|tunnel/.test(lyr.id)) {
+          map.setPaintProperty(lyr.id, 'line-color', '#e0d9cc');
+          map.setPaintProperty(lyr.id, 'line-opacity', /motorway|trunk/.test(lyr.id) ? 0.5 : 0.3);
+        }
+      });
+      const tryPaint = (id, prop, val) => { try { if (map.getLayer(id)) map.setPaintProperty(id, prop, val); } catch(e){} };
+      tryPaint('water',            'fill-color', '#b5ccd8');
+      tryPaint('land',             'fill-color', '#ede8d5');
+      tryPaint('land-structure',   'fill-color', '#ede8d5');
+      tryPaint('national-park',    'fill-color', '#dde8d0');
+      tryPaint('landuse',          'fill-color', '#e8e2d0');
+      tryPaint('building',         'fill-color', '#ddd7c8');
+      tryPaint('building',         'fill-opacity', 0.6);
+    } catch(e) { /* best-effort */ }
+
+    // Fetch Istanbul metro GeoJSON (already in the project)
+    fetch('/media-assets/maps/' + encodeURIComponent('metro hatları.geojson'))
+      .then(r => r.ok ? r.json() : null)
+      .then(geo => {
+        if (!geo || !geo.features) return;
+        geo.features.forEach(feat => {
+          if (!feat.geometry) return;
+          const nm = ((feat.properties || {}).PROJE_AD_KISA || '').toLowerCase();
+          if (nm.includes('marmaray') || nm.includes('banliyö')) return;
+          const toLines = g =>
+            g.type === 'LineString'      ? [g.coordinates] :
+            g.type === 'MultiLineString' ? g.coordinates   : [];
+          toLines(feat.geometry).forEach(raw => {
+            if (raw.length < 2) return;
+            // Thin out to ≤50 pts — plenty for a context layer
+            const step   = Math.max(1, Math.ceil(raw.length / 50));
+            const coords = raw.filter((_, i) => i % step === 0);
+            if (coords[coords.length-1] !== raw[raw.length-1]) coords.push(raw[raw.length-1]);
+            const el = metroG.append('path')
+              .attr('fill','none').attr('stroke','rgba(155,145,128,0.50)')
+              .attr('stroke-width', isMob ? 1.0 : 1.2)
+              .attr('stroke-linecap','round').attr('opacity', 0).node();
+            metroLineEls.push({el, coords});
+          });
+        });
+      })
+      .catch(() => {})
+      .finally(() => { mapReady = true; map.triggerRepaint(); startCinematic(); });
+  });
+
+  // Failsafe — start anyway if tiles stall
+  setTimeout(() => { if (!mapReady) { mapReady = true; map.triggerRepaint(); startCinematic(); } }, 8000);
+
+  // ── 5-beat cinematic timeline ──────────────────────────
+  function startCinematic() {
+    const T = isMob ? {
+      txt1:800, metroIn:1000, lineDraw:2000, txt1Off:2000,
+      zoomBo:4500, zBoDur:1100, txt3:4700, pulse3:5300, txt3Off:6500,
+      zoomYk:6800, zYkDur:1000, txt4:7000, pulse4:7300, txt4Off:8300,
+      zoomOut:8600, zOutDur:800, allPulse:8900, txt5:8700, txt5Off:9800,
+      fadeOut:10100,
+    } : {
+      txt1:900, metroIn:1100, lineDraw:3000, txt1Off:3000,
+      zoomBo:6200, zBoDur:1400, txt3:6500, pulse3:7100, txt3Off:8700,
+      zoomYk:9000, zYkDur:1100, txt4:9300, pulse4:9700, txt4Off:10900,
+      zoomOut:11100, zOutDur:1000, allPulse:11400, txt5:11200, txt5Off:12900,
+      fadeOut:13100,
+    };
+
+    // Beat 1: geography visible + first text
+    setTimeout(() => heroText('Her gün <strong>2.2 milyon kişi</strong> Marmaray\'la Boğaz\'ı geçiyor.'), T.txt1);
+    setTimeout(() => metroLineEls.forEach(({el}) => d3.select(el).transition().duration(1100).attr('opacity',1)), T.metroIn);
+
+    // Beat 2: Marmaray line draws west→east
     setTimeout(() => {
-      heroText('<strong>30 Ekim 2021, 18:18.</strong> Bostancı. Bir kişi raylara atladı.');
-    }, T.txt3Show);
-    setTimeout(() => addPulse(boPt[0], boPt[1], 1), T.pulse3);
-    setTimeout(() => heroText(null), T.txt3Hide);
-  }
+      heroText(null);
+      lineDrawing = true; lineDrawStart = performance.now();
+      map.triggerRepaint();
+    }, T.lineDraw);
 
-  // ── BEAT 4: Pan Yenikapı + 6 rings (t≈9s) ─────────────
-  if (ykPt) {
-    setTimeout(() => camZoom(ykPt[0], ykPt[1], ZOOM, T.zoomYkDur), T.zoomYk);
+    // Beat 3: zoom Bostancı — geography + overlay move together
+    setTimeout(() => map.flyTo({center:[29.0969,40.9629], zoom:ZOOM_CLOSE, pitch:45, bearing:BEARING, duration:T.zBoDur, essential:true}), T.zoomBo);
+    setTimeout(() => heroText('<strong>30 Ekim 2021, 18:18.</strong> Bostancı. Bir kişi raylara atladı.'), T.txt3);
+    setTimeout(() => addPulse(29.0969, 40.9629, 1), T.pulse3);
+    setTimeout(() => heroText(null), T.txt3Off);
+
+    // Beat 4: pan to Yenikapı
+    setTimeout(() => map.flyTo({center:[28.9506,41.0047], zoom:ZOOM_CLOSE, pitch:45, bearing:BEARING, duration:T.zYkDur, essential:true}), T.zoomYk);
+    setTimeout(() => heroText('Yenikapı\'da <strong>6 kişi.</strong> En işlek aktarma noktası...'), T.txt4);
+    setTimeout(() => addPulse(28.9506, 41.0047, 6), T.pulse4);
+    setTimeout(() => heroText(null), T.txt4Off);
+
+    // Beat 5: pull back to overview, all incident rings
+    setTimeout(() => map.flyTo({center:MAP_CENTER, zoom:ZOOM_INIT, pitch:PITCH_INIT, bearing:BEARING, duration:T.zOutDur, essential:true}), T.zoomOut);
+    setTimeout(() => HS.filter(s=>s.d>0).forEach((s,i) => setTimeout(()=>addPulse(s.lon,s.lat,1), i*90)), T.allPulse);
+    setTimeout(() => heroText('<strong>29 olay. 20 ölüm.</strong> Dört yılda.'), T.txt5);
+    setTimeout(() => heroText(null), T.txt5Off);
+
+    // Finale: canvas fades out, title fades in
     setTimeout(() => {
-      heroText('Yenikapı\'da <strong>6 kişi.</strong> En işlek aktarma noktası...');
-    }, T.txt4Show);
-    setTimeout(() => addPulse(ykPt[0], ykPt[1], 6), T.pulse4);
-    setTimeout(() => heroText(null), T.txt4Hide);
+      renderActive = false;
+      heroText(null);
+      d3.select(canvas).transition().duration(1500).ease(d3.easeLinear)
+        .style('opacity', 0)
+        .on('end', () => { try { map.remove(); } catch(e){} endCinematic(); });
+      if (titleLayer) {
+        titleLayer.style.transition = 'opacity 1.5s ease';
+        titleLayer.style.opacity    = '1';
+        titleLayer.style.pointerEvents = 'auto';
+      }
+    }, T.fadeOut);
   }
-
-  // ── BEAT 5: Pull back, all rings, finale (t≈11s) ──────
-  setTimeout(() => camReset(T.zoomOutDur), T.zoomOut);
-
-  setTimeout(() => {
-    HS.filter(s => s.d > 0).forEach((s, i) => {
-      const pt = proj([s.lon, s.lat]);
-      if (pt) setTimeout(() => addPulse(pt[0], pt[1], 1), i * 90);
-    });
-  }, T.allPulse);
-
-  setTimeout(() => {
-    heroText('<strong>29 olay. 20 ölüm.</strong> Dört yılda.');
-  }, T.txt5Show);
-
-  // ── FINALE: Map fades, title appears (t≈13s) ──────────
-  setTimeout(() => {
-    heroText(null);
-    d3.select(canvas).transition().duration(1500).ease(d3.easeLinear)
-      .style('opacity', 0)
-      .on('end', cueFn);
-    if (titleLayer) {
-      titleLayer.style.transition = 'opacity 1.5s ease';
-      titleLayer.style.opacity    = '1';
-      titleLayer.style.pointerEvents = 'auto';
-    }
-  }, T.mapFadeOut);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2211,7 +2267,7 @@ function updatePanelPosition() {
     }
   }
 
-  vizPanel.style.transform = `translateY(${offset}px)`;
+  vizPanel.style.transform = `translate3d(0, ${Math.round(offset)}px, 0)`;
 }
 
 let _raf = false;

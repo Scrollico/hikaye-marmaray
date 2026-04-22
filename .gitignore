@@ -201,3 +201,4 @@ project-files/docs-ai-ps/
 src/statics/images/docs-ai-ps
 .lefthook-local/
 .vercel
+mapbox-token.js
