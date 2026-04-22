@@ -349,7 +349,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem 2rem 1rem;
+  /* Desktop: reserve right side for step cards */
+  padding: 1.5rem calc(440px + 5vw + 2rem) 1rem 2rem;
   z-index: 1;
   pointer-events: none;
   background: var(--bg);
@@ -358,8 +359,8 @@ body {
 }
 #chart-content {
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 860px;
+  margin: 0;
 }
 .viz-header {
   width: 100%;
@@ -466,16 +467,30 @@ body {
   }
   .sc h3 { font-size: .86rem }
 
-  /* viz panel: top-aligned so chart fills upper portion, cards sit at bottom */
+  /* viz panel: top-aligned, chart fills upper viewport */
   .viz-panel {
     justify-content: flex-start;
     align-items: stretch;
-    padding: 2.5rem .75rem .5rem;
+    padding: 1.5rem .75rem .5rem;
   }
-  #chart-content { max-width: 100% }
-  .viz-wrap svg  { max-height: none }
+  #chart-content { max-width: 100%; margin: 0 }
   .viz-title { font-size: .95rem }
   .viz-sub   { font-size: .62rem }
+}
+
+/* ════════════════════════════════════════
+   PHONE-SPECIFIC: card anchored below chart
+════════════════════════════════════════ */
+@media (max-width: 640px) {
+  /* SVG naturally ~401px tall on 375px phone — cap and anchor card right below */
+  .viz-wrap svg  { max-height: 62vh }
+  .step {
+    min-height: 100vh;
+    align-items: flex-start;
+    padding-top: 500px;
+    padding-bottom: 1rem;
+  }
+  .step:first-child { padding-top: 500px }
 }
 </style>
 </head>
@@ -910,20 +925,31 @@ window.addEventListener('DOMContentLoaded', () => {
        .alpha(0.3).restart();
   }
 
-  // Phase 2: station names snap to horizontal row
+  // Phase 2: station names snap into position
   function phase2() {
     gOver.selectAll('.cin-wire').transition().duration(350).attr('opacity',0).remove();
     sim.stop();
     const sNodes = nodes.filter(d => d.cat==='s');
-    const sp = Math.min(W * 0.14, 120);
-    const total = (sNodes.length-1)*sp;
-    sNodes.forEach((d,i) => { d.tx = W/2 - total/2 + i*sp; d.ty = H*0.4; });
+    const isMobileIntro = W < 640;
+    if (isMobileIntro) {
+      // 2-row layout: 3 per row, prevent overlap
+      const cols = 3, sp = W / (cols + 1);
+      sNodes.forEach((d,i) => {
+        d.tx = sp * ((i % cols) + 1);
+        d.ty = H * (i < cols ? 0.3 : 0.58);
+      });
+    } else {
+      const sp = Math.min(W * 0.14, 120);
+      const total = (sNodes.length-1)*sp;
+      sNodes.forEach((d,i) => { d.tx = W/2 - total/2 + i*sp; d.ty = H*0.4; });
+    }
     nodeGrps.filter(d => d.cat==='s')
       .transition().duration(950).ease(d3.easeCubicInOut)
       .attr('transform', d => `translate(${d.tx},${d.ty})`);
     nodeGrps.filter(d => d.cat==='s').select('text')
       .transition().duration(950)
-      .attr('font-size', d => `${BASE_FS*d.sz*1.0}px`).attr('opacity', 0.85);
+      .attr('font-size', d => `${BASE_FS * d.sz * (isMobileIntro ? 0.78 : 1.0)}px`)
+      .attr('opacity', 0.85);
     nodeGrps.filter(d => d.cat!=='s').select('text')
       .transition().duration(500).attr('opacity', 0);
   }
