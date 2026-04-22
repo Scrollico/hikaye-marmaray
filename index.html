@@ -1201,6 +1201,7 @@ function playHeroMap() {
   map.on('render', onMapRender);
 
   map.on('load', () => {
+    map.resize(); // fix any 0-size canvas if container was invisible during init
     // Warm palette: beige land, cool-muted water, subdued roads, keep district labels only
     try {
       const KEEP_LABEL = /settlement-label|place-label|place_label|state-label/;
