@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raylarda Kriz — Marmaray'da İntihar Vakalarının Anatomisi</title>
+<meta property="og:title" content="Raylarda Kriz">
+<meta property="og:description" content="Marmaray'da 2021'den bu yana yaşanan intihar vakalarının belgelenmiş tarihi. 29 vaka, 20 ölü.">
+<meta name="description" content="Marmaray hattında 2021–2025 yılları arasında kaydedilen 29 intihar ve intihar girişiminin veri gazeteciliği analizi.">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600;8..60,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+
+/* ── Tokens ── */
+:root {
+  --bg:     #f8f5f0;
+  --bg2:    #ede9e3;
+  --text:   #1c1917;
+  --muted:  #78716c;
+  --accent: #b52b27;
+  --blue:   #1e5f8a;
+  --green:  #276749;
+  --card:   rgba(255,255,255,.62);
+  --border: rgba(28,25,23,.10);
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box }
+html { scroll-behavior:smooth }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+/* ── Crisis notice ── */
+.crisis-bar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: .5rem 1.5rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .72rem;
+  color: var(--muted);
+  text-align: center;
+  position: relative;
+  z-index: 1000;
+}
+.crisis-bar strong { color: var(--text); }
+.crisis-bar a { color: var(--blue); text-decoration: none; }
+
+/* ── Progress bar ── */
+.progress {
+  position: fixed;
+  top: 0; left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--blue));
+  z-index: 999;
+  transition: width .15s;
+  border-radius: 0 2px 2px 0;
+  width: 0;
+}
+
+/* ════════════════════════════════════════
+   CINEMATIC INTRO
+════════════════════════════════════════ */
+.cin-intro {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+  z-index: 10;
+}
+.cin-brand {
+  position: absolute;
+  left: 0; right: 0;
+  text-align: center;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  opacity: 0;
+  z-index: 5;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: clamp(.8rem, 1.8vw, 1.1rem);
+  color: var(--text);
+  transition: top .9s cubic-bezier(.4,0,.2,1),
+              transform .9s cubic-bezier(.4,0,.2,1),
+              font-size .9s ease,
+              color .9s ease,
+              opacity .7s ease;
+}
+.cin-brand.settled {
+  top: 1.8rem;
+  transform: translateY(0);
+  font-size: .68rem;
+  color: var(--muted);
+}
+.cin-svg-wrap {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 58%;
+  z-index: 1;
+}
+.cin-svg-wrap svg { width:100%; height:100%; display:block }
+.cin-text-layer {
+  position: absolute;
+  left: 0; right: 0;
+  top: 58%; height: 32%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.cin-line {
+  font-family: 'Source Serif 4', serif;
+  color: var(--text);
+  opacity: 0;
+  position: absolute;
+  text-align: center;
+  max-width: 68vw;
+  line-height: 1.55;
+}
+.cin-l1, .cin-l2 { font-size: clamp(1.1rem,2.2vw,1.6rem); font-weight:400; color:var(--muted) }
+.cin-l3, .cin-l5 { font-size: clamp(1.2rem,2.5vw,1.75rem); font-weight:600; color:var(--text) }
+.cin-l4          { font-size: clamp(1.1rem,2.2vw,1.55rem); font-weight:400; color:var(--muted) }
+.cin-l6          { font-size: clamp(1.3rem,2.8vw,1.9rem);  font-weight:700; color:var(--accent); letter-spacing:-.01em }
+
+.cin-title-layer {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 2rem;
+  opacity: 0;
+  pointer-events: none;
+}
+.cin-main-title {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(2.4rem, 7vw, 5rem);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.05;
+  letter-spacing: -.03em;
+  margin-bottom: .8rem;
+}
+.cin-main-title span { color: var(--accent) }
+.cin-sub-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: clamp(.85rem, 1.7vw, 1.1rem);
+  color: var(--muted);
+  font-weight: 400;
+}
+.cin-scroll-cue {
+  position: absolute;
+  bottom: 2rem; left: 0; right: 0;
+  text-align: center;
+  z-index: 6;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .5rem;
+  opacity: 0;
+}
+.cin-scroll-cue .arr {
+  width: 14px; height: 14px;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  transform: rotate(45deg);
+  animation: bob 2s ease-in-out infinite;
+}
+@keyframes bob {
+  0%,100% { transform: rotate(45deg) translateY(0) }
+  50%      { transform: rotate(45deg) translateY(5px) }
+}
+
+/* ════════════════════════════════════════
+   EDITORIAL SECTIONS
+════════════════════════════════════════ */
+.editorial {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 3rem 2rem 3.5rem;
+  position: relative;
+  z-index: 3;
+  background: var(--bg);
+}
+.editorial p {
+  font-family: 'Source Serif 4', serif;
+  font-size: 1.12rem;
+  line-height: 1.88;
+  color: var(--text);
+  margin-bottom: 1.4rem;
+}
+.editorial .lead {
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.72;
+}
+.editorial h2 {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(1.5rem, 3.2vw, 2.1rem);
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+  letter-spacing: -.02em;
+  line-height: 1.2;
+}
+.kicker {
+  font-family: 'DM Sans', sans-serif;
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: .55rem;
+}
+.pullquote {
+  border-left: 3px solid var(--accent);
+  padding: .4rem 0 .4rem 1.4rem;
+  margin: 2rem 0;
+  font-family: 'Source Serif 4', serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--text);
+  line-height: 1.6;
+}
+.pullquote cite {
+  display: block;
+  font-size: .82rem;
+  font-weight: 400;
+  font-style: normal;
+  color: var(--muted);
+  margin-top: .45rem;
+}
+.stat-callout {
+  background: var(--bg2);
+  border-radius: 12px;
+  padding: 1.4rem 1.8rem;
+  margin: 2rem 0;
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.stat-callout .stat-num {
+  font-family: 'Source Serif 4', serif;
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+.stat-callout .stat-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: .88rem;
+  color: var(--muted);
+  line-height: 1.5;
+  flex: 1;
+}
+.separator {
+  width: 48px;
+  height: 3px;
+  background: var(--accent);
+  margin: 3rem auto;
+  border-radius: 2px;
+  opacity: .4;
+}
+
+/* ════════════════════════════════════════
+   SCROLLYTELLING
+════════════════════════════════════════ */
+.scrolly { position: relative; margin: 0 auto }
+
+.scrolly__steps {
+  position: relative;
+  z-index: 10;
+  width: 440px;
+  margin-left: auto;
+  margin-right: 5vw;
+}
+.step {
+  min-height: 95vh;
+  display: flex;
+  align-items: center;
+  padding: 1.5rem 0;
+}
+.step:first-child  { padding-top: 20vh }
+.step:last-child   { margin-bottom: 14vh }
+
+.sc {
+  background: var(--card);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 1.1rem 1.4rem 1.2rem;
+  border: 1px solid rgba(255,255,255,.4);
+  max-width: 440px;
+  box-shadow: 0 4px 28px rgba(0,0,0,.07);
+  text-align: center;
+  opacity: .35;
+  transition: opacity .3s, box-shadow .3s;
+}
+.step.is-active .sc {
+  opacity: 1;
+  box-shadow: 0 6px 32px rgba(0,0,0,.12);
+}
+.badge {
+  display: inline-block;
+  font-size: .5rem;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  padding: .12rem .5rem;
+  border-radius: 20px;
+  margin-bottom: .45rem;
+  opacity: .8;
+}
+.b-scale  { background:#dce8f5; color:#1e5f8a }
+.b-geo    { background:#ede0f5; color:#7e3fa0 }
+.b-comms  { background:#fde8d0; color:#b55a0a }
+.b-metro  { background:#d4f0e8; color:#1a6648 }
+.b-global { background:#fde8e8; color:#b52b27 }
+
+.sc h3 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: .92rem;
+  font-weight: 400;
+  line-height: 1.58;
+  color: var(--text);
+  margin: 0;
+}
+
+/* ════════════════════════════════════════
+   FIXED VIZ PANEL
+════════════════════════════════════════ */
+.viz-panel {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 2rem 1rem;
+  z-index: 1;
+  pointer-events: none;
+  background: var(--bg);
+  transform: translateY(100vh);
+  will-change: transform;
+}
+#chart-content {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.viz-header {
+  width: 100%;
+  margin-bottom: .6rem;
+  padding-left: .5rem;
+}
+.viz-title {
+  font-family: 'Source Serif 4', serif;
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text);
+}
+.viz-sub {
+  font-size: .82rem;
+  color: var(--muted);
+  margin-top: .15rem;
+}
+.viz-source {
+  width: 100%;
+  font-size: .6rem;
+  color: var(--muted);
+  opacity: .45;
+  margin-top: .4rem;
+  padding-left: .5rem;
+}
+.viz-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 68vh;
+}
+
+/* ════════════════════════════════════════
+   OUTRO
+════════════════════════════════════════ */
+.outro {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 3rem 2rem 7rem;
+  font-family: 'Source Serif 4', serif;
+  position: relative;
+  z-index: 3;
+  background: var(--bg);
+}
+.outro h2 {
+  font-size: 1.55rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  letter-spacing: -.02em;
+  line-height: 1.25;
+}
+.outro p {
+  font-size: 1.08rem;
+  line-height: 1.82;
+  color: var(--text);
+  margin-bottom: 1.2rem;
+}
+.outro .final-line {
+  font-size: 1.18rem;
+  font-weight: 600;
+  color: var(--accent);
+  font-style: italic;
+  margin-top: 2rem;
+  line-height: 1.6;
+}
+.outro .source-block {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid #ddd8d2;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .75rem;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+/* ════════════════════════════════════════
+   MOBILE
+════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .cin-main-title  { font-size: clamp(1.9rem, 9vw, 2.9rem) }
+  .cin-svg-wrap    { height: 48% }
+  .cin-text-layer  { top: 48%; height: 40% }
+  .cin-line        { max-width: 88vw }
+
+  .crisis-bar { font-size: .6rem; padding: .4rem .75rem }
+
+  .editorial       { padding: 2.5rem 1.25rem 3rem }
+  .editorial p     { font-size: 1rem; line-height: 1.78 }
+  .editorial h2    { font-size: 1.35rem }
+  .pullquote       { font-size: 1rem }
+  .stat-callout    { flex-direction: column; gap: .6rem }
+
+  .scrolly__steps  { width: 100%; margin-left: 0; margin-right: 0; padding: 0 }
+  .step            { min-height: 90vh; align-items: flex-end; padding-bottom: 1.5rem }
+  .step:first-child { min-height: 90vh; padding-top: 16vh }
+  .step:last-child { margin-bottom: 22vh }
+  .sc {
+    max-width: calc(100% - 2rem);
+    width: calc(100% - 2rem);
+    margin: 0 1rem;
+    padding: .85rem 1.1rem 1rem;
+    border-radius: 14px;
+  }
+  .sc h3 { font-size: .86rem }
+
+  /* viz panel: top-aligned so chart fills upper portion, cards sit at bottom */
+  .viz-panel {
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: 2.5rem .75rem .5rem;
+  }
+  #chart-content { max-width: 100% }
+  .viz-wrap svg  { max-height: none }
+  .viz-title { font-size: .95rem }
+  .viz-sub   { font-size: .62rem }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Crisis notice ── -->
+<div class="crisis-bar">
+  <strong>Kriz anında yardım:</strong> İntihar Önleme Hattı <a href="tel:182">182</a> &nbsp;·&nbsp;
+  ALO 182 (7/24) &nbsp;·&nbsp; <a href="tel:08503466173">0850 346 61 73</a> — Türkiye Psikiyatri Derneği
+</div>
+
+<div class="progress" id="prog"></div>
+
+<!-- ════════════════════ CINEMATIC INTRO ════════════════════ -->
+<section class="cin-intro" id="cin-intro">
+  <div class="cin-brand" id="cin-brand">Ali Safa Korkut · Veri Gazeteciliği</div>
+  <div class="cin-svg-wrap"><svg id="cin-svg"></svg></div>
+  <div class="cin-text-layer" id="cin-text-layer">
+    <div class="cin-line cin-l1">30 Ekim 2021. Saat 18:18. Bostancı İstasyonu.</div>
+    <div class="cin-line cin-l2">Tren yavaşlarken. Sıradan bir salı. Sıradan bir akşam.</div>
+    <div class="cin-line cin-l3">2021: 2 vaka. 2022: 3. 2023: 7. 2024: 13.</div>
+    <div class="cin-line cin-l4">Her yıl bir öncekinden fazla. Her yıl daha sık.</div>
+    <div class="cin-line cin-l5">29 kayıt. 20 hayatını kaybetti. Sayılabilenler.</div>
+    <div class="cin-line cin-l6">Bu hikâye, sessizce büyüyen bir krizin anatomisi.</div>
+  </div>
+  <div class="cin-title-layer" id="cin-title-layer">
+    <h1 class="cin-main-title">Raylarda<br><span>Kriz</span></h1>
+    <p class="cin-sub-title">Marmaray'da 2021'den bu yana yaşanan intihar vakalarının belgelenmiş tarihi</p>
+  </div>
+  <div class="cin-scroll-cue" id="cin-cue">
+    <span>Aşağı kaydır</span>
+    <div class="arr"></div>
+  </div>
+</section>
+
+<!-- ════════════════════ SHARED VIZ PANEL ════════════════════ -->
+<div class="viz-panel" id="viz-panel">
+  <div id="chart-content">
+    <div class="viz-header">
+      <div class="viz-title" id="viz-title"></div>
+      <div class="viz-sub"   id="viz-sub"></div>
+    </div>
+    <div class="viz-wrap"><svg id="viz" viewBox="0 0 800 480"></svg></div>
+    <div class="viz-source" id="viz-source"></div>
+  </div>
+</div>
+
+<!-- ════════════════════ EDITORIAL 1: OPENING ════════════════════ -->
+<section class="editorial">
+  <div class="kicker">Birinci Perde · İlk Vaka</div>
+  <h2>Her şey bir anda oldu</h2>
+  <p class="lead">Soğuk bir sonbahar akşamıydı. 30 Ekim 2021, saat 18:18. Bostancı İstasyonu'ndaki kalabalık, günün yorgunluğunu üzerinde taşıyan yolcularla doluydu. İşten eve dönen biri, İstanbulkart'ını turnike üzerinden geçirdi, perona yürüdü.</p>
+  <p>Yaklaşık bir dakika sonra tren göründü. Hız kesmeden önce, peronun ucundaki o kişi rayların üzerine geçti. Marmaray hattında son beş yılın ilk ölümlü intiharıydı bu.</p>
+  <p>Ama son değildi.</p>
+
+  <div class="stat-callout">
+    <div>
+      <div class="stat-num">29</div>
+      <div class="stat-label">2021–2025 yılları arasında<br>Marmaray'da kayıtlara geçen<br>intihar ve intihar girişimi</div>
+    </div>
+    <div>
+      <div class="stat-num">20</div>
+      <div class="stat-label">hayatını kaybetti<br><span style="font-size:.8rem">Her üç vakadan ikisi</span></div>
+    </div>
+  </div>
+
+  <p>Bu sayılar, Marmaray'ın resmi X (Twitter) hesabındaki duyurular, haber siteleri ve ulaşım veritabanlarından derlendi. İçlerinde resmi olarak duyurulmayan, hatta duyurulup sonradan silinen vakalar da var.</p>
+  <div class="separator"></div>
+</section>
+
+<!-- ════════════════════ SCROLLY 1: SCALE ════════════════════ -->
+<section class="scrolly" id="scrolly-1">
+  <div class="scrolly__steps" id="steps-1">
+
+    <div class="step" data-step="0">
+      <div class="sc">
+        <div class="badge b-scale">Yıllık Trend</div>
+        <h3>2021'de 2 vakayı belgeleyen Marmaray hattı, 2024'e gelindiğinde 13 vakaya ulaştı. Üç yılda altı buçuk kat artış.</h3>
+      </div>
+    </div>
+
+    <div class="step" data-step="1">
+      <div class="sc">
+        <div class="badge b-scale">Aylık Dağılım</div>
+        <h3>2024'te neredeyse her ay bir intihar girişimi yaşandı — 12 ayın 9'unda kayıt var. Kasım 2024 tek başına üç vaka ile öne çıkıyor.</h3>
+      </div>
+    </div>
+
+    <div class="step" data-step="2">
+      <div class="sc">
+        <div class="badge b-scale">Haftanın Günleri</div>
+        <h3>Cumartesi günleri en fazla vakanın yaşandığı gün. 29 vakanın 9'u Cumartesi kayıtlı. Çarşamba ise en sakin gün: yalnızca 1 vaka.</h3>
+      </div>
+    </div>
+
+    <div class="step" data-step="3">
+      <div class="sc">
+        <div class="badge b-scale">Günün Saatleri</div>
+        <h3>Vakaların büyük çoğunluğu sabah saatlerinde — sabah: 12 vaka, öğle: 9. Gece saatlerinde ise en az vaka. Sabah trafiğiyle aynı anda.</h3>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════ EDITORIAL 2: GEOGRAPHY ════════════════════ -->
+<section class="editorial">
+  <div class="kicker">İkinci Perde · Coğrafya</div>
+  <h2>Üç istasyon, ölümlerin çoğu</h2>
+  <p>Marmaray'ın 29 vakası İstanbul boyunca 18 farklı istasyona dağılıyor. Ama bu dağılım eşit değil. Yenikapı, Ayrılık Çeşmesi ve Bostancı —İstanbul'un en yoğun aktarma noktaları— vakaların yüzde altmış ikisini tek başına barındırıyor.</p>
+  <p>Bu üç istasyonun ortak özelliği: Yüksek yolcu trafiği, birden fazla ulaşım bağlantısı ve her saatte gelen tren. Yenikapı tek başına 9 vaka, 6 ölümle açık ara önde.</p>
+  <p>Tuzla, Darıca, Güzelyalı gibi uç nokta istasyonlarında da birer vaka kayıtlı — olgunun yalnızca merkezle sınırlı olmadığının göstergesi.</p>
+  <div class="separator"></div>
+</section>
+
+<!-- ════════════════════ SCROLLY 2: GEOGRAPHY + OUTCOME ════════════════════ -->
+<section class="scrolly" id="scrolly-2">
+  <div class="scrolly__steps" id="steps-2">
+
+    <div class="step" data-step="4">
+      <div class="sc">
+        <div class="badge b-geo">İstasyon Haritası</div>
+        <h3>Yenikapı 6 ölümle listenin başında. Ardından Bostancı ve Ayrılık Çeşmesi geliyor. İstanbul'un en işlek üç aktarma noktası, aynı zamanda en fazla can kaybı yaşanan duraklar.</h3>
+      </div>
+    </div>
+
+    <div class="step" data-step="5">
+      <div class="sc">
+        <div class="badge b-geo">Vaka Sonuçları</div>
+        <h3>29 vakadan 20'si ölümle sonuçlandı. Oran: yüzde 69. Dört kişi ağır yaralı kurtuldu; beş vakada akıbet bilinmiyor. Raylı sistemde müdahale için zaman çok kısıtlı.</h3>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════ EDITORIAL 3: COMMUNICATION ════════════════════ -->
+<section class="editorial">
+  <div class="kicker">Üçüncü Perde · Resmi Dil</div>
+  <h2>"Üzücü bir olay" — söylenmeyenin anatomisi</h2>
+  <p>Marmaray'ın resmi X (Twitter) hesabı, 29 vakanın 23'ünü duyurdu. Bu duyurularda servis aksaklıkları gerekçe gösterildi; insanlar değil, trenler konu edildi.</p>
+  <p>Duyurularda "intihar" kelimesi yalnızca 6 kez geçti. "Üzücü" kelimesi ise 19 kez. Mayıs 2023'teki ölümlü vakadan sonra Marmaray, "intihar" kelimesini bir daha hiç kullanmadı.</p>
+
+  <div class="pullquote">
+    "İntihar haberlerinin nasıl hazırlandığı kritik önem taşıyor. Haber içerikleri; yakınlarını kaybedenleri, kendine zarar verme düşüncesi olan bireyleri ve toplumu farklı biçimlerde etkiliyor."
+    <cite>— Doç. Dr. Yunus Hacımusalar, Türk Psikiyatri Derneği</cite>
+  </div>
+
+  <p>Dört duyuru sonradan silindi. İki vakadan hiç söz edilmedi — bunlardan biri 15 yaşında bir genç kızdı.</p>
+  <div class="separator"></div>
+</section>
+
+<!-- ════════════════════ SCROLLY 3: COMMUNICATION AUDIT ════════════════════ -->
+<section class="scrolly" id="scrolly-3">
+  <div class="scrolly__steps" id="steps-3">
+
+    <div class="step" data-step="6">
+      <div class="sc">
+        <div class="badge b-comms">İletişim Denetimi</div>
+        <h3>23 duyuruldu, 4 duyurulup silindi, 2 hiç duyurulmadı. Hesap verebilirlik: 29 vakanın 6'sı için resmi kayıt yok.</h3>
+      </div>
+    </div>
+
+    <div class="step" data-step="7">
+      <div class="sc">
+        <div class="badge b-comms">Kelime Analizi</div>
+        <h3>Marmaray'ın 23 duyurusunda en sık kullanılan kelimeler: "marmaray", "nedeniyle", "üzücü". "İntihar" yalnızca 6 kez geçti — ve Mayıs 2023'ten sonra hiç kullanılmadı.</h3>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════ EDITORIAL 4: METRO ════════════════════ -->
+<section class="editorial">
+  <div class="kicker">Dördüncü Perde · Metro İstanbul</div>
+  <h2>Marmaray yalnız değil</h2>
+  <p>Marmaray'ın yaşadıkları İstanbul'un yeraltı metro ağında da yansımasını buluyor. Metro İstanbul'un verilerine göre 2019'dan bu yana raylı sistemde 28 intihar ve intihar girişimi belgeli.</p>
+  <p>M2 hattı —Yenikapı-Hacıosman— bu vakaların 16'sına, yani yüzde altmış sekizine ev sahipliği yapıyor. Taksim İstasyonu tek başına 6 vakada geçiyor.</p>
+  <p>Marmaray vakalarında sabah saatleri öne çıkarken, metro vakalarında öğle saatleri baskın. İki sistemin kullanım profili farklı; krizin saati de farklı.</p>
+  <div class="separator"></div>
+</section>
+
+<!-- ════════════════════ SCROLLY 4: METRO ════════════════════ -->
+<section class="scrolly" id="scrolly-4">
+  <div class="scrolly__steps" id="steps-4">
+
+    <div class="step" data-step="8">
+      <div class="sc">
+        <div class="badge b-metro">Metro Hatları</div>
+        <h3>M2 hattı 22 vakanın 16'sını barındırıyor. Altı farklı hatta vakalar kayıtlı; ancak M2 tüm sistemden çok daha baskın. Taksim tek başına 6 vakayla öne çıkıyor.</h3>
+      </div>
+    </div>
+
+    <div class="step" data-step="9">
+      <div class="sc">
+        <div class="badge b-metro">Saatler: Marmaray – Metro</div>
+        <h3>Marmaray vakalarında sabah saatleri zirve yapıyor (12 vaka). Metro'da ise öğle saatleri baskın (11 vaka). Aynı şehir, aynı kriz — farklı saatler.</h3>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════ EDITORIAL 5: CONTEXT + EXPERT ════════════════════ -->
+<section class="editorial">
+  <div class="kicker">Beşinci Perde · Bağlam</div>
+  <h2>Avrupa'da durum: Yılda 2.400'den fazla ölüm</h2>
+  <p>Bu yalnızca İstanbul'un meselesi değil. Eurostat'ın tren istasyonu intihar verilerine göre AB genelinde 2012 zirvesinden bu yana her yıl 2.200 ile 2.700 arasında kişi tren raylarında hayatını kaybediyor.</p>
+  <p>Almanya yıllık ortalama 765 vaka ile listede zirvede. Fransa 296, Hollanda 200, Çekya 199 ile ardından geliyor. Türkiye bu istatistiklere dahil değil; karşılaştırmalı veri yok.</p>
+  <p>Tokyo, Seul, Londra ve Paris bu sorunla yüzleşerek önlem aldı: Peron bariyerleri, mavi LED aydınlatma, kriz müdahale eğitimi. İstanbul'da bu önlemlerin hiçbiri sistematik biçimde uygulanmıyor.</p>
+  <div class="separator"></div>
+</section>
+
+<!-- ════════════════════ SCROLLY 5: GLOBAL CONTEXT ════════════════════ -->
+<section class="scrolly" id="scrolly-5">
+  <div class="scrolly__steps" id="steps-5">
+
+    <div class="step" data-step="10">
+      <div class="sc">
+        <div class="badge b-global">AB Karşılaştırması</div>
+        <h3>AB genelinde yılda ortalama 2.400 kişi tren raylarında hayatını kaybediyor. Almanya (765), Fransa (296), Hollanda (200) listeyi oluşturuyor. Türkiye bu verilere dahil değil.</h3>
+      </div>
+    </div>
+
+    <div class="step" data-step="11">
+      <div class="sc">
+        <div class="badge b-global">Kanıtlanmış Önlemler</div>
+        <h3>Tokyo: Mavi LED ışık — yüzde 84 azalma. Seul: 2009'dan beri tüm istasyonlarda cam bariyer. Londra: Peron altı boşlukları. İstanbul'da sistematik uygulama yok.</h3>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════ OUTRO ════════════════════ -->
+<section class="outro">
+  <h2>Veri burada bitiyor — kriz bitmiyor</h2>
+  <p>Bu belgede yer alan 29 Marmaray vakasının en yenisi Nisan 2026'ya ait. Rakamlar yazıldığı anda eskiyor.</p>
+  <p>Peron bariyerleri, mavi LED aydınlatma, istasyon personeline kriz müdahale eğitimi ve görünür yardım hatları — bunlar pahalı ya da yeni fikirler değil. Onlarca şehirde kanıtlanmış uygulamalar. İstanbul'da eksik olan yalnızca irade.</p>
+  <p>Marmaray'ın her "üzücü olay" duyurusu bir başarısızlığın itirafıdır. Şeffaflık olurdu, dil dürüst olurdu, veri kamuya açık olurdu — ve önlemler başlardı.</p>
+  <div class="final-line">Sayılar değil, seçimler.</div>
+
+  <div class="source-block">
+    <strong>Veri kaynakları:</strong> Marmaray resmi X hesabı duyuruları (arşiv + screenshot) · Haber siteleri ve basın taraması · Metro İstanbul basın bültenleri · Eurostat — Railway Accident Dataset (2006–2023)<br><br>
+    <strong>Yöntem:</strong> Veriler Ali Safa Korkut tarafından Temmuz 2021 – Nisan 2026 tarihleri arasında derlendi. Silinen tweet'ler Wayback Machine ve screenshot arşivleriyle doğrulandı. Metro İstanbul verileri basın taramasına dayanmaktadır.<br><br>
+    <strong>İntihar haberlerinde medya etiği:</strong> Bu içerik DSÖ medya rehberi ilkeleri doğrultusunda hazırlanmıştır. Yöntem detayları yer almamaktadır. Destek için: <strong>182</strong>
+  </div>
+</section>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// INLINE DATA
+// ═══════════════════════════════════════════════════════════
+const DATA = {
+  yearly: [
+    {y:2021,v:2},{y:2022,v:3},{y:2023,v:7},{y:2024,v:13},{y:2025,v:4}
+  ],
+  monthly: [
+    {ay:'Tem 2021',yil:2021,v:1},{ay:'Eki 2021',yil:2021,v:1},
+    {ay:'Oca 2022',yil:2022,v:1},{ay:'Haz 2022',yil:2022,v:1},{ay:'Eki 2022',yil:2022,v:1},
+    {ay:'Mar 2023',yil:2023,v:1},{ay:'May 2023',yil:2023,v:2},{ay:'Haz 2023',yil:2023,v:1},
+    {ay:'Tem 2023',yil:2023,v:1},{ay:'Ara 2023',yil:2023,v:2},
+    {ay:'Oca 2024',yil:2024,v:1},{ay:'Şub 2024',yil:2024,v:1},{ay:'Mar 2024',yil:2024,v:1},
+    {ay:'Nis 2024',yil:2024,v:1},{ay:'May 2024',yil:2024,v:2},{ay:'Ağu 2024',yil:2024,v:1},
+    {ay:'Eki 2024',yil:2024,v:1},{ay:'Kas 2024',yil:2024,v:3},{ay:'Ara 2024',yil:2024,v:2},
+    {ay:'Mar 2025',yil:2025,v:1},{ay:'Haz 2025',yil:2025,v:1},{ay:'Ağu 2025',yil:2025,v:2}
+  ],
+  dayOfWeek: [
+    {g:'Pzt',v:5},{g:'Sal',v:5},{g:'Çar',v:1},
+    {g:'Per',v:2},{g:'Cum',v:3},{g:'Cmt',v:9},{g:'Paz',v:4}
+  ],
+  timeOfDay: [
+    {t:'Sabah\n06–12',v:12},{t:'Öğle\n12–17',v:9},
+    {t:'Akşam\n17–21',v:4},{t:'Gece\n21–06',v:1},{t:'Bilinmiyor',v:3}
+  ],
+  stations: [
+    {d:'Yenikapı',v:6},{d:'Bostancı',v:3},{d:'Ayrılık Çeşmesi',v:3},
+    {d:'Feneryolu',v:2},{d:'Üsküdar',v:1},{d:'Tuzla',v:1},
+    {d:'Yeşilyurt',v:1},{d:'Ataköy',v:1},{d:'Güzelyalı',v:1},{d:'Darıca',v:1}
+  ],
+  outcomes: [
+    {a:'Hayatını\nkaybetti',v:20,c:'#b52b27'},
+    {a:'Bilinmiyor',v:5,c:'#78716c'},
+    {a:'Ağır yaralı',v:4,c:'#1e5f8a'}
+  ],
+  communication: [
+    {d:'Duyurdu',v:23,c:'#276749'},
+    {d:'Önce duyurdu,\nsonra sildi',v:4,c:'#b55a0a'},
+    {d:'Hiç\nduyurmadı',v:2,c:'#b52b27'}
+  ],
+  words: [
+    {k:'marmaray',n:21,hl:false},{k:'nedeniyle',n:21,hl:false},{k:'üzücü',n:19,hl:'orange'},
+    {k:'meydana',n:16,hl:false},{k:'gecikmeli',n:16,hl:false},{k:'olay',n:15,hl:false},
+    {k:'istasyonunda',n:14,hl:false},{k:'gelen',n:14,hl:false},
+    {k:'yapılmaktadır',n:11,hl:false},{k:'hat',n:11,hl:false},{k:'intihar',n:6,hl:'red'}
+  ],
+  metroLines: [
+    {h:'M2',v:16},{h:'M3',v:2},{h:'M1A',v:1},{h:'M9',v:1},{h:'T1',v:1},{h:'T5',v:1}
+  ],
+  metroTime:    [{t:'Sabah',v:2},{t:'Öğle',v:11},{t:'Akşam',v:6},{t:'Gece',v:3}],
+  marmarayTime: [{t:'Sabah',v:12},{t:'Öğle',v:9},{t:'Akşam',v:4},{t:'Gece',v:1}],
+  euTotal: [
+    {y:2006,v:1647},{y:2007,v:2425},{y:2008,v:2220},{y:2009,v:2563},
+    {y:2010,v:2538},{y:2011,v:2687},{y:2012,v:2734},{y:2013,v:2552},
+    {y:2014,v:2608},{y:2015,v:2511},{y:2016,v:2608},{y:2017,v:2532},
+    {y:2018,v:2379},{y:2019,v:2313},{y:2020,v:2204},{y:2021,v:2234},
+    {y:2022,v:2401},{y:2023,v:2370}
+  ],
+  euCountries: [
+    {u:'Almanya',n:765.7},{u:'Fransa',n:296.6},{u:'Hollanda',n:200.2},
+    {u:'Çekya',n:199.5},{u:'İtalya',n:135},{u:'İspanya',n:123},
+    {u:'Macaristan',n:101.2},{u:'Polonya',n:86.5},{u:'Avusturya',n:89.2},
+    {u:'Finlandiya',n:51.5},{u:'Romanya',n:45},{u:'Portekiz',n:42.5},
+    {u:'İsveç',n:73.5},{u:'Belçika',n:93.8},{u:'İsviçre',n:128.9}
+  ]
+};
+
+// ── Color constants ──
+const C = {
+  accent: '#b52b27', blue: '#1e5f8a', green: '#276749',
+  orange: '#b55a0a', purple: '#7e3fa0',
+  muted: '#78716c', text: '#1c1917', bg: '#f8f5f0',
+  gridLine: '#e0dbd5'
+};
+
+// ═══════════════════════════════════════════════════════════
+// CINEMATIC INTRO
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  const W = window.innerWidth;
+  const H = window.innerHeight * 0.58;
+  const svg = d3.select('#cin-svg').attr('viewBox', `0 0 ${W} ${H}`);
+
+  const particleData = [
+    // Stations (6) — accent red
+    {text:'Yenikapı',   cat:'s', sz:1.4},
+    {text:'Bostancı',   cat:'s', sz:1.2},
+    {text:'Ayrılık Çeşmesi', cat:'s', sz:1.1},
+    {text:'Üsküdar',    cat:'s', sz:1.1},
+    {text:'Feneryolu',  cat:'s', sz:0.95},
+    {text:'Zeytinburnu',cat:'s', sz:0.9},
+    // Years (5) — muted
+    {text:'2021', cat:'y', sz:1.0},
+    {text:'2022', cat:'y', sz:1.0},
+    {text:'2023', cat:'y', sz:1.1},
+    {text:'2024', cat:'y', sz:1.35},
+    {text:'2025', cat:'y', sz:0.95},
+    // Keywords (10) — blue
+    {text:'intihar',    cat:'k', sz:0.95},
+    {text:'vaka',       cat:'k', sz:0.88},
+    {text:'tren',       cat:'k', sz:0.88},
+    {text:'raylar',     cat:'k', sz:0.82},
+    {text:'istasyon',   cat:'k', sz:0.82},
+    {text:'sabah',      cat:'k', sz:0.8},
+    {text:'Cumartesi',  cat:'k', sz:0.82},
+    {text:'hat',        cat:'k', sz:0.78},
+    {text:'Marmaray',   cat:'k', sz:1.05},
+    {text:'metro',      cat:'k', sz:0.82},
+    // Numbers (9) — accent
+    {text:'29',   cat:'n', sz:1.55},
+    {text:'20',   cat:'n', sz:1.4},
+    {text:'13',   cat:'n', sz:1.3},
+    {text:'%69',  cat:'n', sz:1.1},
+    {text:'9',    cat:'n', sz:1.05},
+    {text:'×6.5', cat:'n', sz:1.05},
+    {text:'18',   cat:'n', sz:0.92},
+    {text:'4',    cat:'n', sz:0.88},
+    {text:'2',    cat:'n', sz:0.88}
+  ];
+
+  const catColor = {s: C.accent, y: C.muted, k: C.blue, n: C.orange};
+  const BASE_FS = Math.max(14, Math.min(W * 0.032, 22));
+
+  const nodes = particleData.map(d => ({
+    ...d,
+    x: W * 0.1 + Math.random() * W * 0.8,
+    y: H * 0.1 + Math.random() * H * 0.8,
+    tx: null, ty: null
+  }));
+
+  const gNodes = svg.append('g');
+  const gOver  = svg.append('g');
+
+  const nodeGrps = gNodes.selectAll('g').data(nodes).join('g')
+    .attr('transform', d => `translate(${d.x},${d.y})`);
+
+  nodeGrps.append('text')
+    .attr('text-anchor','middle').attr('dominant-baseline','central')
+    .attr('font-family', d => d.cat==='n' ? "'Source Serif 4',serif" : "'DM Sans',sans-serif")
+    .attr('font-size',   d => `${BASE_FS * d.sz * 0.3}px`)
+    .attr('font-weight', d => (d.cat==='s'||d.cat==='n') ? '700' : '500')
+    .attr('fill', d => catColor[d.cat])
+    .attr('opacity', 0)
+    .style('paint-order','stroke')
+    .style('stroke', 'rgba(248,245,240,0.92)')
+    .style('stroke-width','3px')
+    .text(d => d.text);
+
+  const sim = d3.forceSimulation(nodes).alphaDecay(0.025).velocityDecay(0.38).stop();
+  sim.on('tick', () => nodeGrps.attr('transform', d => `translate(${d.x},${d.y})`));
+
+  // Phase 0: gentle float
+  function phase0() {
+    nodeGrps.select('text')
+      .transition().duration(900)
+      .attr('opacity', d => d.cat==='s' ? 0.5 : (d.cat==='y' ? 0.2 : 0.0))
+      .attr('font-size', d => `${BASE_FS * d.sz * 0.52}px`);
+    sim.force('x', d3.forceX(W/2).strength(0.012))
+       .force('y', d3.forceY(H/2).strength(0.012))
+       .force('collide', d3.forceCollide(d => BASE_FS*d.sz*0.55+6).strength(0.5))
+       .force('charge', d3.forceManyBody().strength(-8))
+       .alpha(0.5).restart();
+  }
+
+  // Phase 1: train track lines + years pulse
+  function phase1() {
+    [H*0.22, H*0.5, H*0.76].forEach((y,i) => {
+      gOver.append('line').attr('class','cin-wire')
+        .attr('x1',-20).attr('y1',y).attr('x2',-20).attr('y2',y)
+        .attr('stroke',C.muted).attr('stroke-width',1.2)
+        .attr('stroke-dasharray','18 8').attr('opacity',0.22)
+        .transition().duration(800).delay(i*180).attr('x2',W+20);
+    });
+    nodeGrps.filter(d => d.cat==='y').select('text')
+      .transition().duration(700)
+      .attr('opacity', 0.75).attr('font-size', d => `${BASE_FS*d.sz*0.72}px`);
+    nodeGrps.filter(d => d.cat==='k'||d.cat==='n').select('text')
+      .transition().duration(400).attr('opacity', 0);
+    sim.force('x', d3.forceX(W/2).strength(0.018))
+       .force('y', d3.forceY(H/2).strength(0.018))
+       .alpha(0.3).restart();
+  }
+
+  // Phase 2: station names snap to horizontal row
+  function phase2() {
+    gOver.selectAll('.cin-wire').transition().duration(350).attr('opacity',0).remove();
+    sim.stop();
+    const sNodes = nodes.filter(d => d.cat==='s');
+    const sp = Math.min(W * 0.14, 120);
+    const total = (sNodes.length-1)*sp;
+    sNodes.forEach((d,i) => { d.tx = W/2 - total/2 + i*sp; d.ty = H*0.4; });
+    nodeGrps.filter(d => d.cat==='s')
+      .transition().duration(950).ease(d3.easeCubicInOut)
+      .attr('transform', d => `translate(${d.tx},${d.ty})`);
+    nodeGrps.filter(d => d.cat==='s').select('text')
+      .transition().duration(950)
+      .attr('font-size', d => `${BASE_FS*d.sz*1.0}px`).attr('opacity', 0.85);
+    nodeGrps.filter(d => d.cat!=='s').select('text')
+      .transition().duration(500).attr('opacity', 0);
+  }
+
+  // Phase 3: numbers surge forward
+  function phase3() {
+    sim.stop();
+    const nNodes = nodes.filter(d => d.cat==='n');
+    nNodes.forEach((d,i) => {
+      d.tx = W*0.12 + (i/nNodes.length)*W*0.76;
+      d.ty = H * 0.45;
+    });
+    nodeGrps.filter(d => d.cat==='n')
+      .transition().duration(1000).ease(d3.easeCubicOut)
+      .attr('transform', d => `translate(${d.tx||d.x},${d.ty||d.y})`);
+    nodeGrps.filter(d => d.cat==='n').select('text')
+      .transition().duration(1000)
+      .attr('font-size', d => `${BASE_FS*d.sz*0.85}px`).attr('opacity', 0.88);
+    nodeGrps.filter(d => d.cat==='s').select('text')
+      .transition().duration(500).attr('opacity', 0.15);
+  }
+
+  // Phase 4: disruption — dim all
+  function phase4() {
+    nodeGrps.select('text')
+      .transition().duration(600).attr('opacity', 0.08).attr('fill', C.muted);
+  }
+
+  // Phase 5: sparkline of yearly growth
+  function phase5() {
+    nodeGrps.select('text').transition().duration(500).attr('opacity', 0);
+    const pts = [{y:2021,v:2},{y:2022,v:3},{y:2023,v:7},{y:2024,v:13}];
+    const cX=W*0.12, cW=W*0.76, cY=H*0.62, cH=H*0.22;
+    const xS = i => cX + (i/3)*cW;
+    const yS = v => cY + cH*(1-(v-0)/14);
+
+    gOver.append('line').attr('class','cin-spark')
+      .attr('x1',cX).attr('y1',yS(7)).attr('x2',cX+cW).attr('y2',yS(7))
+      .attr('stroke',C.muted).attr('stroke-width',1).attr('stroke-dasharray','5 4').attr('opacity',0)
+      .transition().duration(350).delay(150).attr('opacity',0.3);
+
+    pts.forEach((d,i) => {
+      const cx = xS(i), cy = yS(d.v);
+      if (i > 0) {
+        const px=xS(i-1), py=yS(pts[i-1].v);
+        gOver.append('line').attr('class','cin-spark')
+          .attr('x1',px).attr('y1',py).attr('x2',px).attr('y2',py)
+          .attr('stroke',C.accent).attr('stroke-width',2.5).attr('opacity',0.8)
+          .transition().duration(280).delay(200+i*120).attr('x2',cx).attr('y2',cy);
+      }
+      gOver.append('circle').attr('class','cin-spark')
+        .attr('cx',cx).attr('cy',cy).attr('r',0)
+        .attr('fill',C.accent).attr('opacity',0.95)
+        .transition().duration(220).delay(220+i*120).attr('r', i===3 ? 7 : 4.5);
+      gOver.append('text').attr('class','cin-spark')
+        .attr('x',cx).attr('y',cy-16).attr('text-anchor','middle')
+        .attr('font-family',"'DM Sans',sans-serif")
+        .attr('font-size',`${BASE_FS*0.75}px`).attr('font-weight','700')
+        .attr('fill',C.accent).text(d.v).attr('opacity',0)
+        .transition().duration(250).delay(300+i*120).attr('opacity',0.9);
+      gOver.append('text').attr('class','cin-spark')
+        .attr('x',cx).attr('y',cY+cH+18).attr('text-anchor','middle')
+        .attr('font-family',"'DM Sans',sans-serif")
+        .attr('font-size',`${BASE_FS*0.6}px`).attr('fill',C.muted).text(d.y).attr('opacity',0)
+        .transition().duration(260).delay(300+i*120).attr('opacity',0.65);
+    });
+  }
+
+  // Phase 6: fade out to title
+  function phase6() {
+    gOver.selectAll('.cin-spark').transition().duration(600).attr('opacity',0).remove();
+    nodeGrps.transition().duration(600).style('opacity',0);
+  }
+
+  // Timeline
+  const lines = document.querySelectorAll('.cin-line');
+  const titleLayer = document.getElementById('cin-title-layer');
+  const cue   = document.getElementById('cin-cue');
+  const brand = document.getElementById('cin-brand');
+
+  const timeline = [
+    {el:lines[0], hold:2200, fn:phase1},
+    {el:lines[1], hold:2000, fn:phase2},
+    {el:lines[2], hold:2600, fn:phase3},
+    {el:lines[3], hold:2000, fn:phase4},
+    {el:lines[4], hold:2300, fn:phase5},
+    {el:lines[5], hold:2200, fn:phase6},
+  ];
+
+  setTimeout(phase0, 200);
+
+  let t = 1000;
+  timeline.forEach(step => {
+    setTimeout(() => { step.el.style.opacity='1'; step.fn(); }, t);
+    t += step.hold + 300;
+    setTimeout(() => { step.el.style.opacity='0'; }, t);
+    t += 150;
+  });
+
+  const titleT = t + 400;
+  setTimeout(() => {
+    brand.style.opacity = '1';
+  }, titleT + 500);
+  setTimeout(() => {
+    brand.classList.add('settled');
+  }, titleT + 1600);
+  setTimeout(() => {
+    titleLayer.style.transition = 'opacity 1.1s ease';
+    titleLayer.style.opacity = '1';
+    titleLayer.style.pointerEvents = 'auto';
+  }, titleT + 2400);
+  setTimeout(() => {
+    cue.style.transition = 'opacity .9s ease';
+    cue.style.opacity = '1';
+  }, titleT + 3500);
+});
+
+// ═══════════════════════════════════════════════════════════
+// PROGRESS BAR
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('scroll', () => {
+  const p = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+  document.getElementById('prog').style.width = p + '%';
+}, { passive: true });
+
+// ═══════════════════════════════════════════════════════════
+// CHART COLOR HELPERS
+// ═══════════════════════════════════════════════════════════
+function gridLine(g, x1, y1, x2, y2) {
+  g.append('line')
+    .attr('x1',x1).attr('y1',y1).attr('x2',x2).attr('y2',y2)
+    .attr('stroke',C.gridLine).attr('stroke-width',1).attr('stroke-dasharray','3 3');
+}
+
+// ═══════════════════════════════════════════════════════════
+// UNIFIED MORPHING VISUALIZATION ENGINE
+// ═══════════════════════════════════════════════════════════
+const viz      = d3.select('#viz');
+const vizTitle = document.getElementById('viz-title');
+const vizSub   = document.getElementById('viz-sub');
+const vizSrc   = document.getElementById('viz-source');
+const vizPanel = document.getElementById('viz-panel');
+let curState = -1;
+
+const META = [
+  {t:'Yıllara göre Marmaray intihar vakaları',     s:'2021–2025, kısmi yıl dahil',         src:'Derleyen: Ali Safa Korkut'},
+  {t:'Aylara göre dağılım',                         s:'2021–2025',                           src:'Derleyen: Ali Safa Korkut'},
+  {t:'Haftanın günlerine göre dağılım',             s:'Marmaray, 2021–2025',                 src:'Derleyen: Ali Safa Korkut'},
+  {t:'Günün saatlerine göre dağılım',               s:'Marmaray, 2021–2025',                 src:'Derleyen: Ali Safa Korkut'},
+  {t:'İstasyon başına ölümlü vaka',                 s:'Marmaray, 2021–2025',                 src:'Derleyen: Ali Safa Korkut'},
+  {t:'Vakaların akıbetine göre dağılım',            s:'Marmaray, toplam 29 vaka',            src:'Derleyen: Ali Safa Korkut'},
+  {t:'Marmaray\'ın vakaları duyurma biçimi',        s:'Resmi X (Twitter) hesabı analizi',    src:'Derleyen: Ali Safa Korkut'},
+  {t:'En sık kullanılan kelimeler',                 s:'Marmaray\'ın 23 resmi duyurusunda',   src:'Derleyen: Ali Safa Korkut'},
+  {t:'Metro İstanbul: Hatlara göre vakalar',        s:'2019–2026',                           src:'Derleyen: Ali Safa Korkut'},
+  {t:'Günün saatleri: Marmaray – Metro karşılaştırması', s:'',                              src:'Derleyen: Ali Safa Korkut'},
+  {t:'AB genelinde tren istasyonu intihar vakaları',s:'Eurostat, 2006–2023',                 src:'Eurostat — Railway Accident Data'},
+  {t:'Kanıtlanmış önlemler: Dünyadan örnekler',     s:'Tokyo, Seul, Londra, Paris',          src:'Çeşitli kaynaklar'}
+];
+
+function drawState(idx) {
+  if (idx === curState) return;
+  curState = idx;
+
+  const isMobile = window.innerWidth < 640;
+  const vbW = isMobile ? 420 : 800;
+  viz.attr('viewBox', `0 0 ${vbW} 480`);
+
+  viz.selectAll('g.state').interrupt().selectAll('*').interrupt();
+  viz.selectAll('g.state').remove();
+  const g = viz.append('g').attr('class','state').attr('opacity',0);
+  g.transition().duration(340).ease(d3.easeCubicOut).attr('opacity',1);
+
+  vizTitle.textContent = META[idx].t;
+  vizSub.textContent   = META[idx].s;
+  vizSrc.textContent   = META[idx].src;
+
+  // ─────────────────────────────────────────────
+  // STATE 0: Yearly trend bar chart
+  // ─────────────────────────────────────────────
+  if (idx === 0) {
+    const data = DATA.yearly;
+    const m = {top:55, right:50, bottom:60, left:55};
+    const W = vbW-m.left-m.right, H = 420-m.top-m.bottom;
+    const cg = g.append('g').attr('transform',`translate(${m.left},${m.top})`);
+
+    const xS = d3.scaleBand().domain(data.map(d=>d.y)).range([0,W]).padding(0.35);
+    const yS = d3.scaleLinear().domain([0,15]).range([H,0]);
+
+    // Grid
+    [5,10,15].forEach(v => {
+      gridLine(cg, 0, yS(v), W, yS(v));
+      cg.append('text').attr('x',-8).attr('y',yS(v)+4)
+        .attr('text-anchor','end').attr('fill',C.muted)
+        .attr('font-size',11).attr('font-family','DM Sans').text(v);
+    });
+    // Baseline
+    cg.append('line').attr('x1',0).attr('y1',H).attr('x2',W).attr('y2',H)
+      .attr('stroke',C.text).attr('stroke-width',1.5);
+
+    // Bars
+    data.forEach((d,i) => {
+      const partial = d.y >= 2025;
+      const bx = xS(d.y), bw = xS.bandwidth();
+      const col = partial ? C.muted : C.accent;
+
+      // bar body
+      cg.append('rect')
+        .attr('x',bx).attr('y',H).attr('width',bw).attr('height',0)
+        .attr('rx',5)
+        .attr('fill', partial ? 'none' : col)
+        .attr('stroke', col).attr('stroke-width', partial ? 2 : 0)
+        .attr('stroke-dasharray', partial ? '6 3' : '0')
+        .attr('fill-opacity', partial ? 0 : 0.82)
+        .transition().duration(650).delay(i*110+150)
+        .attr('y',yS(d.v)).attr('height',H-yS(d.v));
+
+      if (partial) {
+        cg.append('rect')
+          .attr('x',bx).attr('y',H).attr('width',bw).attr('height',0).attr('rx',5)
+          .attr('fill',col).attr('fill-opacity',0.18)
+          .transition().duration(650).delay(i*110+150)
+          .attr('y',yS(d.v)).attr('height',H-yS(d.v));
+      }
+
+      // value label
+      cg.append('text').attr('x',bx+bw/2).attr('y',yS(d.v)-10)
+        .attr('text-anchor','middle').attr('fill',col)
+        .attr('font-size',15).attr('font-weight','700').attr('font-family','DM Sans')
+        .text(d.v).attr('opacity',0)
+        .transition().duration(350).delay(i*110+600).attr('opacity',1);
+
+      // year label
+      cg.append('text').attr('x',bx+bw/2).attr('y',H+22)
+        .attr('text-anchor','middle').attr('fill',C.text)
+        .attr('font-size',13).attr('font-weight','500').attr('font-family','DM Sans')
+        .text(d.y);
+      if (partial) {
+        cg.append('text').attr('x',bx+bw/2).attr('y',H+38)
+          .attr('text-anchor','middle').attr('fill',C.muted)
+          .attr('font-size',9).attr('font-family','DM Sans').text('kısmi');
+      }
+    });
+
+    // Growth annotation arrow 2021→2024
+    const x21 = xS(2021)+xS.bandwidth()/2, y21 = yS(2)-14;
+    const x24 = xS(2024)+xS.bandwidth()/2, y24 = yS(13)-14;
+    cg.append('defs').append('marker').attr('id','arr0')
+      .attr('viewBox','0 0 8 8').attr('refX',4).attr('refY',4)
+      .attr('markerWidth',5).attr('markerHeight',5).attr('orient','auto')
+      .append('path').attr('d','M0,0 L8,4 L0,8 Z').attr('fill',C.muted);
+    cg.append('line')
+      .attr('x1',x21).attr('y1',y21).attr('x2',x21).attr('y2',y21)
+      .attr('stroke',C.muted).attr('stroke-width',1).attr('stroke-dasharray','4 3')
+      .attr('marker-end','url(#arr0)').attr('opacity',0.6)
+      .transition().duration(700).delay(900).attr('x2',x24).attr('y2',y24);
+    cg.append('text').attr('x',(x21+x24)/2+10).attr('y',(y21+y24)/2-18)
+      .attr('text-anchor','middle').attr('fill',C.accent)
+      .attr('font-size',13).attr('font-weight','700').attr('font-family','DM Sans')
+      .text('× 6.5 artış').attr('opacity',0)
+      .transition().duration(400).delay(1200).attr('opacity',1);
+  }
+
+  // ─────────────────────────────────────────────
+  // STATE 1: Monthly distribution lollipop
+  // ─────────────────────────────────────────────
+  else if (idx === 1) {
+    const data = DATA.monthly;
+    const m = {top:30, right:80, bottom:30, left:78};
+    const W = vbW-m.left-m.right, H = 450-m.top-m.bottom;
+    const cg = g.append('g').attr('transform',`translate(${m.left},${m.top})`);
+
+    const yearColor = {2021:'#1e5f8a', 2022:'#276749', 2023:'#b55a0a', 2024:C.accent, 2025:'#7e3fa0'};
+
+    const yS = d3.scaleBand().domain(data.map(d=>d.ay)).range([0,H]).padding(0.28);
+    const xS = d3.scaleLinear().domain([0,4]).range([0,W]);
+
+    // Grid verticals
+    [1,2,3].forEach(v => gridLine(cg, xS(v), 0, xS(v), H));
+
+    // Stems + circles
+    data.forEach((d,i) => {
+      const cy = yS(d.ay) + yS.bandwidth()/2;
+      const col = yearColor[d.yil] || C.muted;
+
+      // stem
+      cg.append('line')
+        .attr('x1',xS(0)).attr('y1',cy).attr('x2',xS(0)).attr('y2',cy)
+        .attr('stroke',col).attr('stroke-width',2).attr('opacity',0.55)
+        .transition().duration(500).delay(i*28)
+        .attr('x2', xS(d.v));
+
+      // dot
+      cg.append('circle')
+        .attr('cx',xS(0)).attr('cy',cy).attr('r',0)
+        .attr('fill',col).attr('opacity',0.9)
+        .transition().duration(300).delay(i*28+250)
+        .attr('cx',xS(d.v)).attr('r',d.v===3?8:d.v===2?6.5:5);
+
+      // month label
+      cg.append('text').attr('x',-6).attr('y',cy+4)
+        .attr('text-anchor','end').attr('fill',C.muted)
+        .attr('font-size',9.5).attr('font-family','DM Sans').text(d.ay);
+
+      // value label for counts>1
+      if (d.v > 1) {
+        cg.append('text').attr('x',xS(d.v)+9).attr('y',cy+4)
+          .attr('text-anchor','start').attr('fill',col)
+          .attr('font-size',10).attr('font-weight','600').attr('font-family','DM Sans')
+          .text(d.v).attr('opacity',0)
+          .transition().duration(300).delay(i*28+400).attr('opacity',1);
+      }
+    });
+
+    // X-axis
+    cg.append('line').attr('x1',0).attr('y1',H).attr('x2',W).attr('y2',H)
+      .attr('stroke',C.text).attr('stroke-width',1);
+    [0,1,2,3].forEach(v => {
+      cg.append('text').attr('x',xS(v)).attr('y',H+16)
+        .attr('text-anchor','middle').attr('fill',C.muted)
+        .attr('font-size',10).attr('font-family','DM Sans').text(v===0?'':v);
+    });
+    cg.append('text').attr('x',W/2).attr('y',H+30)
+      .attr('text-anchor','middle').attr('fill',C.muted)
+      .attr('font-size',10).attr('font-style','italic').attr('font-family','DM Sans')
+      .text('Vaka sayısı');
+
+    // Year legend
+    Object.entries(yearColor).forEach(([yr,col],i) => {
+      cg.append('circle').attr('cx',W+14).attr('cy',10+i*20).attr('r',5).attr('fill',col).attr('opacity',.85);
+      cg.append('text').attr('x',W+24).attr('y',14+i*20)
+        .attr('fill',C.muted).attr('font-size',10).attr('font-family','DM Sans').text(yr);
+    });
+
+    // Annotate Kasım 2024 cluster
+    const kasIdx = data.findIndex(d=>d.ay==='Kas 2024');
+    if (kasIdx >= 0) {
+      const ky = yS('Kas 2024') + yS.bandwidth()/2;
+      cg.append('text').attr('x',xS(3)+10).attr('y',ky+4)
+        .attr('fill',C.accent).attr('font-size',9).attr('font-weight','600')
+        .attr('font-family','DM Sans').text('↑ 3 vaka');
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // STATE 2: Day of week horizontal bars
+  // ─────────────────────────────────────────────
+  else if (idx === 2) {
+    const data = DATA.dayOfWeek;
+    const m = {top:45, right:70, bottom:40, left:60};
+    const W = vbW-m.left-m.right, H = 380-m.top-m.bottom;
+    const cg = g.append('g').attr('transform',`translate(${m.left},${m.top})`);
+
+    const yS = d3.scaleBand().domain(data.map(d=>d.g)).range([0,H]).padding(0.28);
+    const xS = d3.scaleLinear().domain([0,10]).range([0,W]);
+
+    [2,4,6,8,10].forEach(v => gridLine(cg, xS(v), 0, xS(v), H));
+    cg.append('line').attr('x1',0).attr('y1',H).attr('x2',W).attr('y2',H)
+      .attr('stroke',C.text).attr('stroke-width',1);
+
+    data.forEach((d,i) => {
+      const isCmt = d.g === 'Cmt';
+      const col = isCmt ? C.accent : C.blue;
+      const by = yS(d.g), bh = yS.bandwidth();
+
+      // bar
+      cg.append('rect')
+        .attr('x',0).attr('y',by).attr('width',0).attr('height',bh)
+        .attr('rx',4).attr('fill',col).attr('opacity', isCmt?0.88:0.55)
+        .transition().duration(600).delay(i*80)
+        .attr('width', xS(d.v));
+
+      // day label
+      cg.append('text').attr('x',-8).attr('y',by+bh/2+4)
+        .attr('text-anchor','end').attr('fill',isCmt?C.accent:C.text)
+        .attr('font-size',12).attr('font-weight',isCmt?'600':'400')
+        .attr('font-family','DM Sans').text(d.g);
+
+      // value
+      cg.append('text').attr('x',xS(d.v)+8).attr('y',by+bh/2+4)
+        .attr('text-anchor','start').attr('fill',col)
+        .attr('font-size',13).attr('font-weight','700').attr('font-family','DM Sans')
+        .text(d.v).attr('opacity',0)
+        .transition().duration(350).delay(i*80+450).attr('opacity',1);
+    });
+
+    // X-axis labels
+    [2,4,6,8,10].forEach(v => {
+      cg.append('text').attr('x',xS(v)).attr('y',H+18)
+        .attr('text-anchor','middle').attr('fill',C.muted)
+        .attr('font-size',10).attr('font-family','DM Sans').text(v);
+    });
+    cg.append('text').attr('x',W/2).attr('y',H+34)
+      .attr('text-anchor','middle').attr('fill',C.muted)
+      .attr('font-size',10).attr('font-style','italic').attr('font-family','DM Sans')
+      .text('Vaka sayısı');
+
+    // Annotation
+    const cmtY = yS('Cmt');
+    cg.append('text').attr('x',xS(9)+4).attr('y',cmtY-6)
+      .attr('fill',C.accent).attr('font-size',11).attr('font-weight','600')
+      .attr('font-family','DM Sans').text('En yoğun gün').attr('opacity',0)
+      .transition().duration(400).delay(900).attr('opacity',1);
+  }
+
+  // ─────────────────────────────────────────────
+  // STATE 3: Time of day (Marmaray)
+  // ─────────────────────────────────────────────
+  else if (idx === 3) {
+    const data = DATA.timeOfDay;
+    const m = {top:45, right:70, bottom:40, left:90};
+    const W = vbW-m.left-m.right, H = 360-m.top-m.bottom;
+    const cg = g.append('g').attr('transform',`translate(${m.left},${m.top})`);
+
+    const yS = d3.scaleBand().domain(data.map(d=>d.t.split('\n')[0])).range([0,H]).padding(0.3);
+    const xS = d3.scaleLinear().domain([0,14]).range([0,W]);
+
+    [4,8,12].forEach(v => gridLine(cg, xS(v), 0, xS(v), H));
+    cg.append('line').attr('x1',0).attr('y1',H).attr('x2',W).attr('y2',H)
+      .attr('stroke',C.text).attr('stroke-width',1);
+
+    data.forEach((d,i) => {
+      const label = d.t.split('\n')[0];
+      const isSabah = label === 'Sabah';
+      const col = isSabah ? C.accent : (label==='Bilinmiyor' ? C.muted : C.blue);
+      const by = yS(label), bh = yS.bandwidth();
+
+      cg.append('rect')
+        .attr('x',0).attr('y',by).attr('width',0).attr('height',bh).attr('rx',4)
+        .attr('fill',col).attr('opacity', isSabah?0.85:0.5)
+        .transition().duration(600).delay(i*100)
+        .attr('width', xS(d.v));
+
+      const lines = d.t.split('\n');
+      lines.forEach((ln,li) => {
+        cg.append('text').attr('x',-8).attr('y',by+bh/2+(li-0.5)*14+4)
+          .attr('text-anchor','end').attr('fill',isSabah?C.accent:C.text)
+          .attr('font-size',li===0?12:9).attr('font-weight',li===0&&isSabah?'600':'400')
+          .attr('font-family','DM Sans').text(ln);
+      });
+
+      cg.append('text').attr('x',xS(d.v)+8).attr('y',by+bh/2+4)
+        .attr('fill',col).attr('font-size',13).attr('font-weight','700')
+        .attr('font-family','DM Sans').text(d.v).attr('opacity',0)
+        .transition().duration(350).delay(i*100+450).attr('opacity',1);
+    });
+
+    [4,8,12].forEach(v => {
+      cg.append('text').attr('x',xS(v)).attr('y',H+18)
+        .attr('text-anchor','middle').attr('fill',C.muted)
+        .attr('font-size',10).attr('font-family','DM Sans').text(v);
+    });
+  }
+
+  // ─────────────────────────────────────────────
+  // STATE 4: Station deaths horizontal bars
+  // ─────────────────────────────────────────────
+  else if (idx === 4) {
+    const data = [...DATA.stations].sort((a,b)=>b.v-a.v);
+    const m = {top:35, right:70, bottom:40, left:140};
+    const W = vbW-m.left-m.right, H = 420-m.top-m.bottom;
+    const cg = g.append('g').attr('transform',`translate(${m.left},${m.top})`);
+
+    const yS = d3.scaleBand().domain(data.map(d=>d.d)).range([0,H]).padding(0.3);
+    const xS = d3.scaleLinear().domain([0,7]).range([0,W]);
+
+    [2,4,6].forEach(v => gridLine(cg, xS(v), 0, xS(v), H));
+    cg.append('line').attr('x1',0).attr('y1',H).attr('x2',W).attr('y2',H)
+      .attr('stroke',C.text).attr('stroke-width',1);
+
+    data.forEach((d,i) => {
+      const isTop = i < 3;
+      const col = isTop ? C.accent : C.blue;
+      const by = yS(d.d), bh = yS.bandwidth();
+
+      cg.append('rect')
+        .attr('x',0).attr('y',by).attr('width',0).attr('height',bh).attr('rx',4)
+        .attr('fill',col).attr('opacity',isTop?0.85:0.45)
+        .transition().duration(550).delay(i*70)
+        .attr('width',xS(d.v));
+
+      cg.append('text').attr('x',-8).attr('y',by+bh/2+4)
+        .attr('text-anchor','end').attr('fill',isTop?C.accent:C.text)
+        .attr('font-size',isTop?12:11).attr('font-weight',isTop?'600':'400')
+        .attr('font-family','DM Sans').text(d.d);
+
+      cg.append('text').attr('x',xS(d.v)+8).attr('y',by+bh/2+4)
+        .attr('fill',col).attr('font-size',12).attr('font-weight','700')
+        .attr('font-family','DM Sans').text(d.v+' ölüm').attr('opacity',0)
+        .transition().duration(320).delay(i*70+400).attr('opacity',1);
+    });
+
+    [2,4,6].forEach(v => {
+      cg.append('text').attr('x',xS(v)).attr('y',H+18)
+        .attr('text-anchor','middle').attr('fill',C.muted)
+        .attr('font-size',10).attr('font-family','DM Sans').text(v);
+    });
+    cg.append('text').attr('x',W/2).attr('y',H+34)
+      .attr('text-anchor','middle').attr('fill',C.muted)
+      .attr('font-size',10).attr('font-style','italic').attr('font-family','DM Sans')
+      .text('Ölümlü vaka sayısı');
+  }
+
+  // ─────────────────────────────────────────────
+  // STATE 5: Outcome distribution — waffle grid
+  // ─────────────────────────────────────────────
+  else if (idx === 5) {
+    const total = 29;
+    const died = 20, unknown = 5, injured = 4;
+    const sz = isMobile ? 26 : 38, gap = isMobile ? 5 : 8;
+    const waffleOffX = isMobile ? 8 : 100;
+    const cg = g.append('g').attr('transform',`translate(${waffleOffX},60)`);
+
+    const cols = 10, rows = 3;
+    const colMap = [
+      ...Array(died).fill({c:C.accent,   l:'Hayatını kaybetti'}),
+      ...Array(injured).fill({c:C.blue,  l:'Ağır yaralı'}),
+      ...Array(unknown).fill({c:C.muted, l:'Bilinmiyor'})
+    ];
+
+    colMap.forEach((d,i) => {
+      const col = i % cols, row = Math.floor(i/cols);
+      cg.append('rect')
+        .attr('x', col*(sz+gap)).attr('y', row*(sz+gap))
+        .attr('width',0).attr('height',sz).attr('rx',5)
+        .attr('fill',d.c).attr('opacity', d.c===C.muted?0.35:0.82)
+        .transition().duration(300).delay(i*28)
+        .attr('width',sz);
+    });
+
+    // Legend + big stats
+    const legendY = rows*(sz+gap) + 35;
+    const legendGap = isMobile ? 120 : 195;
+    const legendData = [
+      {c:C.accent, label:`Hayatını kaybetti`, n:died},
+      {c:C.blue,   label:'Ağır yaralı',       n:injured},
+      {c:C.muted,  label:'Bilinmiyor',         n:unknown}
+    ];
+    legendData.forEach((d,i) => {
+      const lx = i * legendGap;
+      cg.append('rect').attr('x',lx).attr('y',legendY).attr('width',14).attr('height',14)
+        .attr('rx',3).attr('fill',d.c).attr('opacity',d.c===C.muted?0.4:0.85);
+      cg.append('text').attr('x',lx+20).attr('y',legendY+11)
+        .attr('fill',C.muted).attr('font-size',isMobile?9:11).attr('font-family','DM Sans').text(d.label);
+    });
+
+    // Central stat
+    const statX = isMobile ? (vbW/2 - waffleOffX) : 300;
+    cg.append('text').attr('x',statX).attr('y',legendY+55)
+      .attr('text-anchor','middle').attr('fill',C.accent)
+      .attr('font-size',isMobile?22:28).attr('font-weight','700').attr('font-family','Source Serif 4,serif')
+      .text('%69 ölüm oranı').attr('opacity',0)
+      .transition().duration(500).delay(800).attr('opacity',1);
+    cg.append('text').attr('x',statX).attr('y',legendY+80)
+      .attr('text-anchor','middle').attr('fill',C.muted)
+      .attr('font-size',isMobile?10:12).attr('font-family','DM Sans')
+      .text('Her üç vakadan ikisi ölümle sonuçlandı').attr('opacity',0)
+      .transition().duration(400).delay(1100).attr('opacity',1);
+  }
+
+  // ─────────────────────────────────────────────
+  // STATE 6: Communication audit — stacked view
+  // ─────────────────────────────────────────────
+  else if (idx === 6) {
+    const data = DATA.communication;
+    const total = 29;
+    const cg = g.append('g').attr('transform',`translate(${isMobile?20:80},60)`);
+    const W2 = isMobile ? vbW-50 : 640, barH = 52, gap = 28;
+
+    // Header
+    cg.append('text').attr('x',W2/2).attr('y',-20)
+      .attr('text-anchor','middle').attr('fill',C.text)
+      .attr('font-size',13).attr('font-weight','600').attr('font-family','DM Sans')
+      .text('29 vakanın Marmaray\'ın resmi hesabında işlenme biçimi');
+
+    let xOff = 0;
+    data.forEach((d,i) => {
+      const pct = d.v / total;
+      const bw = W2 * pct;
+      const col = d.c;
+
+      cg.append('rect')
+        .attr('x',xOff).attr('y',50).attr('width',0).attr('height',barH).attr('rx',0)
+        .attr('fill',col).attr('opacity',0.82)
+        .transition().duration(700).delay(i*180)
+        .attr('width',bw);
+
+      if (bw > 40) {
+        const lines = d.d.split(',');
+        lines.forEach((ln,li) => {
+          cg.append('text').attr('x',xOff+bw/2).attr('y',50+barH/2+(li-0.3)*16+4)
+            .attr('text-anchor','middle').attr('fill','#fff')
+            .attr('font-size',li===0?11:9).attr('font-weight','600')
+            .attr('font-family','DM Sans').text(ln.trim()).attr('opacity',0)
+            .transition().duration(350).delay(i*180+400).attr('opacity',1);
+        });
+      }
+
+      // Value below
+      cg.append('text').attr('x',xOff+bw/2).attr('y',50+barH+22)
+        .attr('text-anchor','middle').attr('fill',col)
+        .attr('font-size',20).attr('font-weight','700').attr('font-family','Source Serif 4,serif')
+        .text(d.v).attr('opacity',0)
+        .transition().duration(350).delay(i*180+500).attr('opacity',1);
+      cg.append('text').attr('x',xOff+bw/2).attr('y',50+barH+40)
+        .attr('text-anchor','middle').attr('fill',C.muted)
+        .attr('font-size',9).attr('font-family','DM Sans')
+        .text('vaka').attr('opacity',0)
+        .transition().duration(350).delay(i*180+550).attr('opacity',0.8);
+
+      xOff += bw;
+    });
+
+    // Annotation: deleted
+    const delX = data[0].v / total * W2;
+    cg.append('text').attr('x',delX+data[1].v/total*W2/2).attr('y',50-12)
+      .attr('text-anchor','middle').attr('fill',C.orange)
+      .attr('font-size',10).attr('font-weight','600').attr('font-family','DM Sans')
+      .text('4 duyuru silindi').attr('opacity',0)
+      .transition().duration(400).delay(900).attr('opacity',1);
+
+    // Bottom note
+    cg.append('text').attr('x',W2/2).attr('y',50+barH+80)
+      .attr('text-anchor','middle').attr('fill',C.muted)
+      .attr('font-size',11).attr('font-style','italic').attr('font-family','DM Sans')
+      .text('Mayıs 2023\'ten sonra "intihar" kelimesi hiç kullanılmadı').attr('opacity',0)
+      .transition().duration(400).delay(1100).attr('opacity',1);
+  }
+
+  // ─────────────────────────────────────────────
+  // STATE 7: Word frequency bars
+  // ─────────────────────────────────────────────
+  else if (idx === 7) {
+    const data = DATA.words;
+    const m = {top:30, right:50, bottom:45, left:130};
+    const W = vbW-m.left-m.right, H = 420-m.top-m.bottom;
+    const cg = g.append('g').attr('transform',`translate(${m.left},${m.top})`);
+
+    const yS = d3.scaleBand().domain(data.map(d=>d.k)).range([0,H]).padding(0.25);
+    const xS = d3.scaleLinear().domain([0,23]).range([0,W]);
+
+    [5,10,15,20].forEach(v => gridLine(cg, xS(v), 0, xS(v), H));
+    cg.append('line').attr('x1',0).attr('y1',H).attr('x2',W).attr('y2',H)
+      .attr('stroke',C.text).attr('stroke-width',1);
+
+    data.forEach((d,i) => {
+      const col = d.hl==='red' ? C.accent : d.hl==='orange' ? C.orange : C.muted;
+      const by = yS(d.k), bh = yS.bandwidth();
+
+      cg.append('rect')
+        .attr('x',0).attr('y',by).attr('width',0).attr('height',bh).attr('rx',3)
+        .attr('fill',col).attr('opacity', d.hl?0.85:0.38)
+        .transition().duration(500).delay(i*50)
+        .attr('width',xS(d.n));
+
+      cg.append('text').attr('x',-7).attr('y',by+bh/2+4)
+        .attr('text-anchor','end').attr('fill',d.hl?col:C.text)
+        .attr('font-size',d.hl?12:10.5).attr('font-weight',d.hl?'700':'400')
+        .attr('font-family','DM Sans').text(d.k);
+
+      cg.append('text').attr('x',xS(d.n)+6).attr('y',by+bh/2+4)
+        .attr('fill',col).attr('font-size',11).attr('font-weight','600')
+        .attr('font-family','DM Sans').text(d.n).attr('opacity',0)
+        .transition().duration(300).delay(i*50+350).attr('opacity',d.hl?1:0.7);
+    });
+
+    // Legend
+    [[C.orange,'"üzücü" — 19 kez'],[C.accent,'"intihar" — yalnızca 6 kez']].forEach(([col,lbl],i) => {
+      cg.append('rect').attr('x',W-260).attr('y',H+22+i*18).attr('width',12).attr('height',12)
+        .attr('rx',2).attr('fill',col).attr('opacity',0.85);
+      cg.append('text').attr('x',W-244).attr('y',H+32+i*18)
+        .attr('fill',C.muted).attr('font-size',10).attr('font-family','DM Sans').text(lbl);
+    });
+  }
+
+  // ─────────────────────────────────────────────
+  // STATE 8: Metro lines bar chart
+  // ─────────────────────────────────────────────
+  else if (idx === 8) {
+    const data = DATA.metroLines;
+    const m = {top:45, right:120, bottom:50, left:65};
+    const W = vbW-m.left-m.right, H = 360-m.top-m.bottom;
+    const cg = g.append('g').attr('transform',`translate(${m.left},${m.top})`);
+
+    const xS = d3.scaleBand().domain(data.map(d=>d.h)).range([0,W]).padding(0.35);
+    const yS = d3.scaleLinear().domain([0,18]).range([H,0]);
+
+    [4,8,12,16].forEach(v => gridLine(cg, 0, yS(v), W, yS(v)));
+    cg.append('line').attr('x1',0).attr('y1',H).attr('x2',W).attr('y2',H)
+      .attr('stroke',C.text).attr('stroke-width',1.5);
+
+    data.forEach((d,i) => {
+      const isM2 = d.h==='M2';
+      const col = isM2 ? C.blue : C.muted;
+      const bx = xS(d.h), bw = xS.bandwidth();
+
+      cg.append('rect')
+        .attr('x',bx).attr('y',H).attr('width',bw).attr('height',0).attr('rx',5)
+        .attr('fill',col).attr('opacity',isM2?0.85:0.45)
+        .transition().duration(600).delay(i*100)
+        .attr('y',yS(d.v)).attr('height',H-yS(d.v));
+
+      cg.append('text').attr('x',bx+bw/2).attr('y',yS(d.v)-9)
+        .attr('text-anchor','middle').attr('fill',col)
+        .attr('font-size',14).attr('font-weight','700').attr('font-family','DM Sans')
+        .text(d.v).attr('opacity',0)
+        .transition().duration(350).delay(i*100+450).attr('opacity',1);
+
+      cg.append('text').attr('x',bx+bw/2).attr('y',H+20)
+        .attr('text-anchor','middle').attr('fill',isM2?C.blue:C.text)
+        .attr('font-size',13).attr('font-weight',isM2?'700':'400')
+        .attr('font-family','DM Sans').text(d.h);
+    });
+
+    [4,8,12,16].forEach(v => {
+      cg.append('text').attr('x',-8).attr('y',yS(v)+4)
+        .attr('text-anchor','end').attr('fill',C.muted)
+        .attr('font-size',11).attr('font-family','DM Sans').text(v);
+    });
+
+    // Annotation
+    const m2x = xS('M2')+xS.bandwidth()/2;
+    cg.append('text').attr('x',m2x).attr('y',yS(16)+28)
+      .attr('text-anchor','middle').attr('fill',C.blue)
+      .attr('font-size',11).attr('font-weight','600').attr('font-family','DM Sans')
+      .text('22 vakanın %73\'ü').attr('opacity',0)
+      .transition().duration(400).delay(900).attr('opacity',1);
+
+    // Taksim note
+    cg.append('text').attr('x',W+10).attr('y',60)
+      .attr('fill',C.muted).attr('font-size',10).attr('font-family','DM Sans')
+      .text('M2 içinde:');
+    cg.append('text').attr('x',W+10).attr('y',78)
+      .attr('fill',C.blue).attr('font-size',12).attr('font-weight','600').attr('font-family','DM Sans')
+      .text('Taksim: 6');
+    cg.append('text').attr('x',W+10).attr('y',96)
+      .attr('fill',C.muted).attr('font-size',10).attr('font-family','DM Sans')
+      .text('Şişli/Mecid.: 4');
+    cg.append('text').attr('x',W+10).attr('y',112)
+      .attr('fill',C.muted).attr('font-size',10).attr('font-family','DM Sans')
+      .text('Yenikapı: 2');
+  }
+
+  // ─────────────────────────────────────────────
+  // STATE 9: Time comparison side by side
+  // ─────────────────────────────────────────────
+  else if (idx === 9) {
+    const labels = ['Sabah','Öğle','Akşam','Gece'];
+    const mData = DATA.marmarayTime;
+    const metData = DATA.metroTime;
+
+    const m9 = {top:40, right:30, bottom:35, left:50};
+    const chartW9 = isMobile ? vbW-m9.left-m9.right : (800-m9.left-m9.right)/2 - 30;
+    const chartH9 = isMobile ? 150 : 255;
+    const offsets9 = isMobile
+      ? [[m9.left, m9.top], [m9.left, m9.top + chartH9 + 55]]
+      : [[m9.left, m9.top], [m9.left + chartW9 + 100, m9.top]];
+
+    [[mData,'Marmaray',C.accent,0],[metData,'Metro İstanbul',C.blue,1]].forEach(([data,title,col,di]) => {
+      const [ox,oy] = offsets9[di];
+      const cg = g.append('g').attr('transform',`translate(${ox},${oy})`);
+      const xS = d3.scaleBand().domain(labels).range([0,chartW9]).padding(0.3);
+      const yS = d3.scaleLinear().domain([0,14]).range([chartH9,0]);
+
+      cg.append('text').attr('x',chartW9/2).attr('y',-16)
+        .attr('text-anchor','middle').attr('fill',col)
+        .attr('font-size',isMobile?12:14).attr('font-weight','700').attr('font-family','DM Sans')
+        .text(title);
+
+      cg.append('line').attr('x1',0).attr('y1',chartH9).attr('x2',chartW9).attr('y2',chartH9)
+        .attr('stroke',C.text).attr('stroke-width',1.5);
+
+      data.forEach((d,i) => {
+        const isSabah = d.t==='Sabah';
+        const bx = xS(d.t), bw = xS.bandwidth();
+        cg.append('rect')
+          .attr('x',bx).attr('y',chartH9).attr('width',bw).attr('height',0).attr('rx',4)
+          .attr('fill',col).attr('opacity', isSabah&&col===C.accent?0.88:d.t==='Öğle'&&col===C.blue?0.88:0.38)
+          .transition().duration(600).delay(i*100)
+          .attr('y',yS(d.v)).attr('height',chartH9-yS(d.v));
+
+        cg.append('text').attr('x',bx+bw/2).attr('y',yS(d.v)-7)
+          .attr('text-anchor','middle').attr('fill',col)
+          .attr('font-size',isMobile?11:13).attr('font-weight','700').attr('font-family','DM Sans')
+          .text(d.v).attr('opacity',0)
+          .transition().duration(350).delay(i*100+400).attr('opacity',1);
+
+        cg.append('text').attr('x',bx+bw/2).attr('y',chartH9+16)
+          .attr('text-anchor','middle').attr('fill',C.muted)
+          .attr('font-size',isMobile?9:10).attr('font-family','DM Sans').text(d.t);
+      });
+
+      const peakLabel = col===C.accent ? 'Sabah' : 'Öğle';
+      const pkX = xS(peakLabel)+xS.bandwidth()/2;
+      const pkV = data.find(d=>d.t===peakLabel)?.v||0;
+      cg.append('text').attr('x',pkX).attr('y',yS(pkV)-20)
+        .attr('text-anchor','middle').attr('fill',col)
+        .attr('font-size',isMobile?9:10).attr('font-weight','600').attr('font-family','DM Sans')
+        .text('Zirve ↑').attr('opacity',0)
+        .transition().duration(350).delay(700).attr('opacity',1);
+    });
+
+    if (!isMobile) {
+      g.append('line').attr('x1',400).attr('y1',m9.top-30).attr('x2',400).attr('y2',m9.top+chartH9+10)
+        .attr('stroke',C.gridLine).attr('stroke-width',2).attr('stroke-dasharray','5 4');
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // STATE 10: EU total line chart
+  // ─────────────────────────────────────────────
+  else if (idx === 10) {
+    const data = DATA.euTotal;
+    const m = {top:45, right:50, bottom:55, left:65};
+    const W = vbW-m.left-m.right, H = 400-m.top-m.bottom;
+    const cg = g.append('g').attr('transform',`translate(${m.left},${m.top})`);
+
+    const xS = d3.scaleLinear().domain([2006,2023]).range([0,W]);
+    const yS = d3.scaleLinear().domain([1400,2900]).range([H,0]);
+
+    [1600,1800,2000,2200,2400,2600,2800].forEach(v => {
+      gridLine(cg, 0, yS(v), W, yS(v));
+      cg.append('text').attr('x',-8).attr('y',yS(v)+4)
+        .attr('text-anchor','end').attr('fill',C.muted)
+        .attr('font-size',10).attr('font-family','DM Sans').text(v.toLocaleString('tr'));
+    });
+
+    const line = d3.line().x(d=>xS(d.y)).y(d=>yS(d.v)).curve(d3.curveMonotoneX);
+    const area = d3.area().x(d=>xS(d.y)).y0(H).y1(d=>yS(d.v)).curve(d3.curveMonotoneX);
+
+    cg.append('path').datum(data).attr('d',area).attr('fill',C.blue).attr('fill-opacity',0.08);
+
+    const path = cg.append('path').datum(data).attr('d',line)
+      .attr('fill','none').attr('stroke',C.blue).attr('stroke-width',2.5);
+    const len = path.node().getTotalLength();
+    path.attr('stroke-dasharray',len).attr('stroke-dashoffset',len)
+      .transition().duration(1400).ease(d3.easeLinear).attr('stroke-dashoffset',0);
+
+    // Peak annotation 2012
+    const px12 = xS(2012), py12 = yS(2734);
+    cg.append('circle').attr('cx',px12).attr('cy',py12).attr('r',5)
+      .attr('fill',C.accent).attr('opacity',0)
+      .transition().duration(300).delay(1200).attr('opacity',1);
+    cg.append('text').attr('x',px12+8).attr('y',py12-10)
+      .attr('fill',C.accent).attr('font-size',10).attr('font-weight','600')
+      .attr('font-family','DM Sans').text('2012: 2.734').attr('opacity',0)
+      .transition().duration(300).delay(1300).attr('opacity',1);
+
+    // X-axis
+    [2006,2010,2015,2020,2023].forEach(y => {
+      cg.append('text').attr('x',xS(y)).attr('y',H+20)
+        .attr('text-anchor','middle').attr('fill',C.muted)
+        .attr('font-size',10).attr('font-family','DM Sans').text(y);
+    });
+    cg.append('line').attr('x1',0).attr('y1',H).attr('x2',W).attr('y2',H)
+      .attr('stroke',C.text).attr('stroke-width',1.5);
+
+    cg.append('text').attr('x',-30).attr('y',-15).attr('fill',C.muted)
+      .attr('font-size',11).attr('font-family','DM Sans').text('Ölüm sayısı (AB geneli)');
+  }
+
+  // ─────────────────────────────────────────────
+  // STATE 11: Solutions grid
+  // ─────────────────────────────────────────────
+  else if (idx === 11) {
+    const solutions = [
+      {icon:'🚪', title:'Cam Bariyer\n(Platform Kapısı)', desc:'Seul: 2009\'dan beri\ntüm istasyonlarda', col:C.green},
+      {icon:'💙', title:'Mavi LED\nAydınlatma',          desc:'Tokyo: yüzde 84\nazalma kanıtlandı',  col:C.blue},
+      {icon:'📹', title:'Yapay Zeka\nİzleme',             desc:'Peron kenarı davranış\nanalizi + anlık uyarı', col:C.purple},
+      {icon:'📞', title:'Kriz Hattı\nGörünürlüğü',       desc:'İstasyon içi afişler\n"Yalnız değilsin"',   col:C.orange},
+      {icon:'🎓', title:'Personel\nEğitimi',              desc:'Londra, Paris: kriz\nmüdahale sertifikası', col:'#276749'},
+      {icon:'📊', title:'Şeffaf Veri\nYayını',           desc:'Düzenli kamuoyu\nraporlaması zorunlu',    col:C.muted}
+    ];
+    const cols2 = isMobile ? 2 : 3;
+    const cardW = isMobile ? 155 : 190, cardH = isMobile ? 140 : 150;
+    const gapX = isMobile ? 18 : 30, gapY = isMobile ? 14 : 22;
+    const startX = (vbW - (cols2*cardW + (cols2-1)*gapX))/2;
+    const startY = 30;
+
+    solutions.forEach((s,i) => {
+      const col2 = i % cols2, row = Math.floor(i/cols2);
+      const x = startX + col2*(cardW+gapX), y = startY + row*(cardH+gapY);
+      const cg = g.append('g').attr('opacity',0)
+        .transition().duration(350).delay(i*80).attr('opacity',1).selection();
+
+      cg.append('rect').attr('x',x).attr('y',y).attr('width',cardW).attr('height',cardH)
+        .attr('rx',12).attr('fill','#fff').attr('stroke',s.col).attr('stroke-width',1.5)
+        .attr('fill-opacity',0.7);
+
+      cg.append('text').attr('x',x+cardW/2).attr('y',y+30)
+        .attr('text-anchor','middle').attr('font-size',22).text(s.icon);
+
+      s.title.split('\n').forEach((ln,li) => {
+        cg.append('text').attr('x',x+cardW/2).attr('y',y+58+li*17)
+          .attr('text-anchor','middle').attr('fill',s.col)
+          .attr('font-size',12).attr('font-weight','700').attr('font-family','DM Sans').text(ln);
+      });
+
+      s.desc.split('\n').forEach((ln,li) => {
+        cg.append('text').attr('x',x+cardW/2).attr('y',y+100+li*15)
+          .attr('text-anchor','middle').attr('fill',C.muted)
+          .attr('font-size',10).attr('font-family','DM Sans').text(ln);
+      });
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// INTERSECTION OBSERVER — step activation + chart state
+// ═══════════════════════════════════════════════════════════
+const allSteps = document.querySelectorAll('.scrolly .step');
+const stepObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const idx = parseInt(e.target.dataset.step, 10);
+      if (!isNaN(idx)) {
+        drawState(idx);
+        allSteps.forEach(s => s.classList.remove('is-active'));
+        e.target.classList.add('is-active');
+      }
+    }
+  });
+}, { rootMargin: '-38% 0px -57% 0px' });
+
+allSteps.forEach(s => stepObs.observe(s));
+
+// ═══════════════════════════════════════════════════════════
+// VIZ PANEL POSITION — sticky-slide tied to scroll section
+// ═══════════════════════════════════════════════════════════
+const scrollySections = document.querySelectorAll('.scrolly');
+let _activeScrolly = null;
+
+function firstStepIdx(sec) {
+  const s = sec.querySelector('.step[data-step]');
+  return s ? parseInt(s.dataset.step, 10) : NaN;
+}
+
+function updatePanelPosition() {
+  const vpH = window.innerHeight;
+  let offset = vpH * 2;
+  let newActive = null;
+
+  for (const sec of scrollySections) {
+    const r = sec.getBoundingClientRect();
+    if (r.top < vpH && r.bottom > 0) {
+      newActive = sec;
+      if      (r.top > 0)      offset = r.top;
+      else if (r.bottom > vpH) offset = 0;
+      else                     offset = r.bottom - vpH;
+      break;
+    }
+  }
+
+  if (newActive !== _activeScrolly) {
+    _activeScrolly = newActive;
+    if (newActive) {
+      const idx = firstStepIdx(newActive);
+      if (!isNaN(idx)) drawState(idx);
+    }
+  }
+
+  vizPanel.style.transform = `translateY(${offset}px)`;
+}
+
+let _raf = false;
+function scheduleUpdate() {
+  if (_raf) return;
+  _raf = true;
+  requestAnimationFrame(() => { _raf = false; updatePanelPosition(); });
+}
+
+window.addEventListener('scroll', scheduleUpdate, { passive: true });
+window.addEventListener('resize', scheduleUpdate, { passive: true });
+updatePanelPosition();
+drawState(0);
+</script>
+</body>
+</html>
