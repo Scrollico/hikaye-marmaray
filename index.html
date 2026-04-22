@@ -79,6 +79,26 @@ body {
   align-items: center;
   justify-content: center;
 }
+#rail-bg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+.rail-vignette {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 65% at 50% 48%, transparent 15%, #f8f5e4 72%),
+    linear-gradient(to bottom, transparent 55%, #f8f5e4 92%);
+}
+@media (prefers-reduced-motion: reduce) {
+  #rail-bg { display: none; }
+  .rail-vignette { display: none; }
+}
 .cin-brand {
   position: absolute;
   top: 1.8rem; left: 0; right: 0;
@@ -572,6 +592,8 @@ body {
 
 <!-- ════════════════════ TYPEWRITER INTRO ════════════════════ -->
 <section class="cin-intro" id="cin-intro">
+  <canvas id="rail-bg" aria-hidden="true"></canvas>
+  <div class="rail-vignette" aria-hidden="true"></div>
   <div class="cin-brand" id="cin-brand">Ali Safa Korkut · Veri Gazeteciliği</div>
   <div class="dactilo-stage" id="dactilo-stage">
     <div class="dactilo-line dim" id="dac-l1"></div>
@@ -2371,6 +2393,81 @@ window.addEventListener('scroll', scheduleUpdate, { passive: true });
 window.addEventListener('resize', scheduleUpdate, { passive: true });
 updatePanelPosition();
 drawState(0);
+
+// ═══════════════════════════════════════════════════════════
+// RAIL BACKGROUND ANIMATION
+// ═══════════════════════════════════════════════════════════
+(function initRailBg() {
+  const canvas = document.getElementById('rail-bg');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const N     = 18;      // cross-ties
+  const SPEED = 0.00028; // t-units per frame → ~0.3 ties/sec cross the viewer
+
+  let W, H, vpX, vpY, lBotX, rBotX;
+  let tOffset = 0;
+  let rafId   = null;
+
+  function resize() {
+    W     = canvas.clientWidth  || window.innerWidth;
+    H     = canvas.clientHeight || window.innerHeight;
+    canvas.width  = W;
+    canvas.height = H;
+    // Vanishing point: 32% from left, 40% down — asymmetric, slightly above mid
+    vpX   = W * 0.32;
+    vpY   = H * 0.40;
+    // Rail feet at bottom edge — wide spread
+    lBotX = W * 0.02;
+    rBotX = W * 0.78;
+  }
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Static rails
+    ctx.strokeStyle = 'rgba(42,35,32,0.09)';
+    ctx.lineWidth   = 1;
+    ctx.beginPath(); ctx.moveTo(vpX, vpY); ctx.lineTo(lBotX, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(vpX, vpY); ctx.lineTo(rBotX, H); ctx.stroke();
+
+    // Animated cross-ties
+    for (let i = 0; i < N; i++) {
+      const t = (tOffset + i / N) % 1;
+      if (t < 0.04) continue;
+
+      const y  = lerp(vpY, H,     t);
+      const lx = lerp(vpX, lBotX, t);
+      const rx = lerp(vpX, rBotX, t);
+
+      ctx.strokeStyle = `rgba(42,35,32,${(0.03 + t * 0.05).toFixed(3)})`;
+      ctx.lineWidth   = Math.max(0.4, t * 1.2);
+      ctx.beginPath(); ctx.moveTo(lx, y); ctx.lineTo(rx, y); ctx.stroke();
+    }
+
+    if (!reduced) tOffset = (tOffset + SPEED) % 1;
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function start() { if (!rafId) rafId = requestAnimationFrame(frame); }
+  function stop()  { if (rafId)  { cancelAnimationFrame(rafId); rafId = null; } }
+
+  resize();
+  window.addEventListener('resize', resize, { passive: true });
+
+  // Only animate while visible — save power once user scrolls past hero
+  const section = canvas.closest('.cin-intro');
+  if (section) {
+    new IntersectionObserver(entries => {
+      entries[0].isIntersecting ? start() : stop();
+    }, { threshold: 0 }).observe(section);
+  } else {
+    start();
+  }
+})();
 </script>
 </body>
 </html>
