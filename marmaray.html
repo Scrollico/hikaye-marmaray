@@ -13,16 +13,17 @@
 
 /* ── Tokens ── */
 :root {
-  --bg:     #f8f5e4;
-  --bg2:    #eeedf5;
-  --text:   #1c1c1c;
-  --muted:  #6b7280;
-  --accent: #b52b27;
-  --blue:   #1e5f8a;
-  --green:  #16a34a;
-  --purple: #8080FF;
-  --card:   rgba(255,255,255,.68);
-  --border: rgba(55,65,82,.10);
+  --bg:              #f8f5e4;
+  --bg2:             #eeedf5;
+  --text:            #1c1c1c;
+  --muted:           #6b7280;
+  --accent:          #8080FF;
+  --charcoal:        #374152;
+  --green:           #16a34a;
+  --purple:          #8080FF;
+  --card:            rgba(255,255,255,.68);
+  --border:          rgba(55,65,82,.10);
+  --brand-gradient:  linear-gradient(90deg, #374152, #8080FF);
 }
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box }
 html { scroll-behavior:smooth }
@@ -218,11 +219,11 @@ body {
   font-weight: 600;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--charcoal);
   margin-bottom: .55rem;
 }
 .pullquote {
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--charcoal);
   padding: .4rem 0 .4rem 1.4rem;
   margin: 2rem 0;
   font-family: 'Source Serif 4', serif;
@@ -254,7 +255,7 @@ body {
   font-family: 'Source Serif 4', serif;
   font-size: 2.8rem;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--charcoal);
   line-height: 1;
 }
 .stat-callout .stat-label {
@@ -267,7 +268,7 @@ body {
 .separator {
   width: 48px;
   height: 3px;
-  background: var(--accent);
+  background: var(--brand-gradient);
   margin: 3rem auto;
   border-radius: 2px;
   opacity: .4;
@@ -326,7 +327,7 @@ body {
 .b-geo    { background:#e8e8ff; color:#8080FF }
 .b-comms  { background:#fde8d0; color:#b55a0a }
 .b-metro  { background:#d4f0e8; color:#16a34a }
-.b-global { background:#fde8e8; color:#b52b27 }
+.b-global { background:#eeedf5; color:#374152 }
 
 .sc h3 {
   font-family: 'DM Sans', sans-serif;
@@ -421,7 +422,7 @@ body {
 .outro .final-line {
   font-size: 1.18rem;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--charcoal);
   font-style: italic;
   margin-top: 2rem;
   line-height: 1.6;
@@ -719,48 +720,6 @@ body {
   </div>
 </section>
 
-<!-- ════════════════════ SCROLLY 6: METRO HARİTASI ════════════════════ -->
-<section class="editorial">
-  <div class="separator"></div>
-  <div class="kicker">Coğrafya · İstasyon Haritası</div>
-  <h2>Harita üzerinde: Her istasyon bir hikâye</h2>
-  <p>Marmaray, Avrupa ile Anadolu'yu birbirine bağlayan tek metro hattı. 76 kilometre, 40 istasyon, iki kıta. Ve bazı duraklar diğerlerinden daha ağır bir sessizlik taşıyor.</p>
-</section>
-
-<section class="scrolly" id="scrolly-6">
-  <div class="scrolly__steps" id="steps-6">
-
-    <div class="step" data-step="12">
-      <div class="sc">
-        <div class="badge b-metro">Hat Haritası</div>
-        <h3>Marmaray, 2013'te açılan İstanbul'un 76 km'lik denizaltı tünelli metro hattı. Halkalı'dan Gebze'ye her gün yaklaşık 500 bin yolcu taşıyor.</h3>
-      </div>
-    </div>
-
-    <div class="step" data-step="13">
-      <div class="sc">
-        <div class="badge b-geo">Olay İstasyonları</div>
-        <h3>Kayıtlara geçen 29 vakadan ölümle sonuçlananlar en çok Yenikapı (6), Bostancı (3) ve Ayrılık Çeşmesi (3) istasyonlarında yaşandı. Daire büyüklüğü ölü sayısını gösteriyor.</h3>
-      </div>
-    </div>
-
-    <div class="step" data-step="14">
-      <div class="sc">
-        <div class="badge b-geo">Yenikapı</div>
-        <h3>Yenikapı, kayıtlı ölümlerin yüzde otuzunu barındıran merkez. Avrupa yakasında, hem M1 hem M2 hatlarıyla aktarma noktası — yüksek yolcu yoğunluğu riski artırıyor.</h3>
-      </div>
-    </div>
-
-    <div class="step" data-step="15">
-      <div class="sc">
-        <div class="badge b-geo">Bostancı · 30 Ekim 2021</div>
-        <h3>Her şey Bostancı İstasyonu'nda başladı. Saat 18:18. Sonraki dört yılda dört farklı istasyonda üç ölümlü vaka daha yaşandı. Harita büyüdükçe, kriz de büyüdü.</h3>
-      </div>
-    </div>
-
-  </div>
-</section>
-
 <!-- ════════════════════ OUTRO ════════════════════ -->
 <section class="outro">
   <h2>Veri burada bitiyor — kriz bitmiyor</h2>
@@ -808,14 +767,14 @@ const DATA = {
     {d:'Yeşilyurt',v:1},{d:'Ataköy',v:1},{d:'Güzelyalı',v:1},{d:'Darıca',v:1}
   ],
   outcomes: [
-    {a:'Hayatını\nkaybetti',v:20,c:'#b52b27'},
-    {a:'Bilinmiyor',v:5,c:'#78716c'},
-    {a:'Ağır yaralı',v:4,c:'#1e5f8a'}
+    {a:'Hayatını\nkaybetti',v:20,c:'#374152'},
+    {a:'Bilinmiyor',v:5,c:'#6b7280'},
+    {a:'Ağır yaralı',v:4,c:'#8080FF'}
   ],
   communication: [
-    {d:'Duyurdu',v:23,c:'#276749'},
+    {d:'Duyurdu',v:23,c:'#16a34a'},
     {d:'Önce duyurdu,\nsonra sildi',v:4,c:'#b55a0a'},
-    {d:'Hiç\nduyurmadı',v:2,c:'#b52b27'}
+    {d:'Hiç\nduyurmadı',v:2,c:'#374152'}
   ],
   words: [
     {k:'marmaray',n:21,hl:false},{k:'nedeniyle',n:21,hl:false},{k:'üzücü',n:19,hl:'orange'},
@@ -846,8 +805,9 @@ const DATA = {
 
 // ── Color constants ──
 const C = {
-  accent: '#b52b27', blue: '#1e5f8a', green: '#16a34a',
+  accent: '#8080FF', blue: '#374152', green: '#16a34a',
   orange: '#b55a0a', purple: '#8080FF',
+  charcoal: '#374152',
   muted: '#6b7280', text: '#1c1c1c', bg: '#f8f5e4',
   gridLine: '#dde0ec'
 };
@@ -962,11 +922,7 @@ const META = [
   {t:'Metro İstanbul: Hatlara göre vakalar',        s:'2019–2026',                           src:'Derleyen: Ali Safa Korkut'},
   {t:'Günün saatleri: Marmaray – Metro karşılaştırması', s:'',                              src:'Derleyen: Ali Safa Korkut'},
   {t:'AB genelinde tren istasyonu intihar vakaları',s:'Eurostat, 2006–2023',                 src:'Eurostat — Railway Accident Data'},
-  {t:'Kanıtlanmış önlemler: Dünyadan örnekler',     s:'Tokyo, Seul, Londra, Paris',          src:'Çeşitli kaynaklar'},
-  {t:'Marmaray Hattı',                              s:'Halkalı\'dan Gebze\'ye 76.3 km',      src:'OSM · Kaynak: Ali Safa Korkut'},
-  {t:'Olayların gerçekleştiği istasyonlar',         s:'Kayıt altına alınan 29 vakadan 20 ölüm', src:'Derleyen: Ali Safa Korkut'},
-  {t:'Yenikapı: En Fazla Ölümün Yaşandığı İstasyon',s:'6 kayıp — 2021–2025',                src:'Derleyen: Ali Safa Korkut'},
-  {t:'Bostancı: İlk Olayın Yaşandığı İstasyon',    s:'30 Ekim 2021, 18:18',                 src:'Derleyen: Ali Safa Korkut'}
+  {t:'Kanıtlanmış önlemler: Dünyadan örnekler',     s:'Tokyo, Seul, Londra, Paris',          src:'Çeşitli kaynaklar'}
 ];
 
 function drawState(idx) {
@@ -1081,7 +1037,7 @@ function drawState(idx) {
     const W = vbW-m.left-m.right, H = 450-m.top-m.bottom;
     const cg = g.append('g').attr('transform',`translate(${m.left},${m.top})`);
 
-    const yearColor = {2021:'#1e5f8a', 2022:'#16a34a', 2023:'#b55a0a', 2024:C.accent, 2025:'#8080FF'};
+    const yearColor = {2021:'#b0b8c8', 2022:'#8a9ab0', 2023:'#6b7280', 2024:'#374152', 2025:'#8080FF'};
 
     const yS = d3.scaleBand().domain(data.map(d=>d.ay)).range([0,H]).padding(0.28);
     const xS = d3.scaleLinear().domain([0,4]).range([0,W]);
@@ -1264,52 +1220,115 @@ function drawState(idx) {
   }
 
   // ─────────────────────────────────────────────
-  // STATE 4: Station deaths horizontal bars
+  // STATE 4: Station deaths — Istanbul map
   // ─────────────────────────────────────────────
   else if (idx === 4) {
-    const data = [...DATA.stations].sort((a,b)=>b.v-a.v);
-    const m = {top:35, right:70, bottom:40, left:140};
-    const W = vbW-m.left-m.right, H = 420-m.top-m.bottom;
-    const cg = g.append('g').attr('transform',`translate(${m.left},${m.top})`);
+    const mapW4 = vbW, mapH4 = 480;
 
-    const yS = d3.scaleBand().domain(data.map(d=>d.d)).range([0,H]).padding(0.3);
-    const xS = d3.scaleLinear().domain([0,7]).range([0,W]);
+    const stations4 = [
+      {n:'Halkalı',         lon:28.8196, lat:41.0285, d:0},
+      {n:'Küçükçekmece',    lon:28.7777, lat:41.0089, d:0},
+      {n:'Florya',          lon:28.7569, lat:40.9743, d:0},
+      {n:'Yeşilköy',        lon:28.8164, lat:40.9769, d:0},
+      {n:'Yeşilyurt',       lon:28.8402, lat:40.9822, d:1},
+      {n:'Ataköy',          lon:28.8695, lat:40.9781, d:1},
+      {n:'Yenimahalle',     lon:28.8863, lat:40.9760, d:0},
+      {n:'Zeytinburnu',     lon:28.9010, lat:40.9933, d:0},
+      {n:'Kazlıçeşme',      lon:28.9139, lat:40.9941, d:0},
+      {n:'Yenikapı',        lon:28.9506, lat:41.0047, d:6},
+      {n:'Sirkeci',         lon:28.9748, lat:41.0147, d:0},
+      {n:'Üsküdar',         lon:29.0106, lat:41.0235, d:1},
+      {n:'Ayrılık Çeşmesi', lon:29.0307, lat:41.0183, d:3},
+      {n:'Acıbadem',        lon:29.0440, lat:41.0073, d:0},
+      {n:'Göztepe',         lon:29.0656, lat:40.9755, d:0},
+      {n:'Erenköy',         lon:29.0734, lat:40.9715, d:0},
+      {n:'Bostancı',        lon:29.0969, lat:40.9629, d:3},
+      {n:'Suadiye',         lon:29.1049, lat:40.9566, d:0},
+      {n:'Feneryolu',       lon:29.1235, lat:40.9487, d:2},
+      {n:'Küçükyalı',       lon:29.1435, lat:40.9363, d:0},
+      {n:'Maltepe',         lon:29.1543, lat:40.9297, d:0},
+      {n:'Cevizli',         lon:29.1618, lat:40.9236, d:0},
+      {n:'Atalar',          lon:29.1712, lat:40.9183, d:0},
+      {n:'Kartal',          lon:29.1872, lat:40.9106, d:0},
+      {n:'Pendik',          lon:29.2314, lat:40.8870, d:0},
+      {n:'Tuzla',           lon:29.2983, lat:40.8282, d:1},
+      {n:'Gebze',           lon:29.4300, lat:40.8018, d:0},
+    ];
 
-    [2,4,6].forEach(v => gridLine(cg, xS(v), 0, xS(v), H));
-    cg.append('line').attr('x1',0).attr('y1',H).attr('x2',W).attr('y2',H)
-      .attr('stroke',C.text).attr('stroke-width',1);
+    const lineCoords4  = stations4.map(s => [s.lon, s.lat]);
+    const lineFeat4    = {type:'Feature', geometry:{type:'LineString', coordinates: lineCoords4}};
+    const proj4        = d3.geoMercator().fitExtent([[22, 35], [mapW4-22, mapH4-45]], lineFeat4);
+    const pathGen4     = d3.geoPath().projection(proj4);
 
-    data.forEach((d,i) => {
-      const isTop = i < 3;
-      const col = isTop ? C.accent : C.blue;
-      const by = yS(d.d), bh = yS.bandwidth();
+    // Line segments (Europe / tunnel / Anatolia)
+    const euroC4   = stations4.slice(0, 11).map(s=>[s.lon,s.lat]);
+    const tunC4    = stations4.slice(10, 12).map(s=>[s.lon,s.lat]);
+    const anatC4   = stations4.slice(11).map(s=>[s.lon,s.lat]);
 
-      cg.append('rect')
-        .attr('x',0).attr('y',by).attr('width',0).attr('height',bh).attr('rx',4)
-        .attr('fill',col).attr('opacity',isTop?0.85:0.45)
-        .transition().duration(550).delay(i*70)
-        .attr('width',xS(d.v));
+    function mkLine4(coords, dashed, col, op, w) {
+      const f = {type:'Feature', geometry:{type:'LineString', coordinates: coords}};
+      const el = g.append('path').attr('d', pathGen4(f))
+        .attr('fill','none').attr('stroke', col||C.blue)
+        .attr('stroke-width', w||2.5).attr('stroke-opacity', op||0.7)
+        .attr('stroke-linecap','round');
+      if (dashed) el.attr('stroke-dasharray','5 4');
+      return el;
+    }
 
-      cg.append('text').attr('x',-8).attr('y',by+bh/2+4)
-        .attr('text-anchor','end').attr('fill',isTop?C.accent:C.text)
-        .attr('font-size',isTop?12:11).attr('font-weight',isTop?'600':'400')
-        .attr('font-family','DM Sans').text(d.d);
+    mkLine4(euroC4);
+    mkLine4(anatC4);
+    mkLine4(tunC4, true, C.blue, 0.42);
 
-      cg.append('text').attr('x',xS(d.v)+8).attr('y',by+bh/2+4)
-        .attr('fill',col).attr('font-size',12).attr('font-weight','700')
-        .attr('font-family','DM Sans').text(d.v+' ölüm').attr('opacity',0)
-        .transition().duration(320).delay(i*70+400).attr('opacity',1);
+    // Continent + tunnel labels
+    const bosLbl = proj4([28.993, 41.019]);
+    if (bosLbl) g.append('text').attr('x',bosLbl[0]).attr('y',bosLbl[1])
+      .attr('text-anchor','middle').attr('fill',C.muted).attr('font-size',7.5)
+      .attr('font-family','DM Sans').attr('opacity',0.45).text('denizaltı tüneli');
+
+    const euLbl = proj4([28.84, 41.048]), anLbl = proj4([29.22, 41.048]);
+    if (euLbl) g.append('text').attr('x',euLbl[0]).attr('y',euLbl[1])
+      .attr('fill',C.muted).attr('font-size',8).attr('font-family','DM Sans').attr('opacity',0.45).text('← Avrupa');
+    if (anLbl) g.append('text').attr('x',anLbl[0]).attr('y',anLbl[1])
+      .attr('fill',C.muted).attr('font-size',8).attr('font-family','DM Sans').attr('opacity',0.45).text('Anadolu →');
+
+    // Station circles — sized by death count
+    stations4.forEach((s, i) => {
+      const pt = proj4([s.lon, s.lat]);
+      if (!pt) return;
+      const isIncident = s.d > 0;
+      const r  = isIncident ? 3.5 + s.d * 1.8 : 2.2;
+      const col = isIncident ? C.accent : C.blue;
+      const op  = isIncident ? 0.85 : 0.35;
+
+      // Pulse ring for top station
+      if (s.n === 'Yenikapı') {
+        g.append('circle').attr('cx',pt[0]).attr('cy',pt[1]).attr('r',r+8)
+          .attr('fill','none').attr('stroke',C.accent).attr('stroke-width',1.2)
+          .attr('opacity',0).transition().duration(600).delay(500).attr('opacity',0.35);
+      }
+
+      g.append('circle').attr('cx',pt[0]).attr('cy',pt[1]).attr('r',0)
+        .attr('fill', isIncident ? col : 'none')
+        .attr('stroke', col).attr('stroke-width', isIncident ? 0 : 1)
+        .attr('opacity', op)
+        .transition().duration(300).delay(i * 25)
+        .attr('r', r);
+
+      if (isIncident) {
+        const above = pt[1] > mapH4 * 0.55;
+        g.append('text').attr('x', pt[0]).attr('y', pt[1] + (above ? -(r+5) : (r+10)))
+          .attr('text-anchor','middle').attr('fill', C.accent)
+          .attr('font-size', s.n==='Yenikapı' ? 10.5 : 8.5)
+          .attr('font-weight','700').attr('font-family','DM Sans')
+          .text(s.n).attr('opacity',0)
+          .transition().duration(300).delay(i*25+260).attr('opacity',0.92);
+        g.append('text').attr('x', pt[0]).attr('y', pt[1] + (above ? -(r+16) : (r+21)))
+          .attr('text-anchor','middle').attr('fill',C.muted)
+          .attr('font-size',7.5).attr('font-family','DM Sans')
+          .text(`${s.d} ölüm`).attr('opacity',0)
+          .transition().duration(300).delay(i*25+360).attr('opacity',0.7);
+      }
     });
-
-    [2,4,6].forEach(v => {
-      cg.append('text').attr('x',xS(v)).attr('y',H+18)
-        .attr('text-anchor','middle').attr('fill',C.muted)
-        .attr('font-size',10).attr('font-family','DM Sans').text(v);
-    });
-    cg.append('text').attr('x',W/2).attr('y',H+34)
-      .attr('text-anchor','middle').attr('fill',C.muted)
-      .attr('font-size',10).attr('font-style','italic').attr('font-family','DM Sans')
-      .text('Ölümlü vaka sayısı');
   }
 
   // ─────────────────────────────────────────────
@@ -1679,7 +1698,7 @@ function drawState(idx) {
       {icon:'💙', title:'Mavi LED\nAydınlatma',          desc:'Tokyo: yüzde 84\nazalma kanıtlandı',  col:C.blue},
       {icon:'📹', title:'Yapay Zeka\nİzleme',             desc:'Peron kenarı davranış\nanalizi + anlık uyarı', col:C.purple},
       {icon:'📞', title:'Kriz Hattı\nGörünürlüğü',       desc:'İstasyon içi afişler\n"Yalnız değilsin"',   col:C.orange},
-      {icon:'🎓', title:'Personel\nEğitimi',              desc:'Londra, Paris: kriz\nmüdahale sertifikası', col:'#276749'},
+      {icon:'🎓', title:'Personel\nEğitimi',              desc:'Londra, Paris: kriz\nmüdahale sertifikası', col:C.green},
       {icon:'📊', title:'Şeffaf Veri\nYayını',           desc:'Düzenli kamuoyu\nraporlaması zorunlu',    col:C.muted}
     ];
     const cols2 = isMobile ? 2 : 3;
@@ -1715,182 +1734,8 @@ function drawState(idx) {
     });
   }
 
-  // ─────────────────────────────────────────────
-  // STATES 12-15: Istanbul / Marmaray map
-  // ─────────────────────────────────────────────
-  else if (idx >= 12 && idx <= 15) {
-    const mapW = vbW, mapH = 480;
-
-    const stations = [
-      {n:'Halkalı',         lon:28.8196, lat:41.0285, d:0},
-      {n:'Küçükçekmece',    lon:28.7777, lat:41.0089, d:0},
-      {n:'Florya',          lon:28.7569, lat:40.9743, d:0},
-      {n:'Yeşilköy',        lon:28.8164, lat:40.9769, d:0},
-      {n:'Yeşilyurt',       lon:28.8402, lat:40.9822, d:1},
-      {n:'Ataköy',          lon:28.8695, lat:40.9781, d:1},
-      {n:'Yenimahalle',     lon:28.8863, lat:40.9760, d:0},
-      {n:'Zeytinburnu',     lon:28.9010, lat:40.9933, d:0},
-      {n:'Kazlıçeşme',      lon:28.9139, lat:40.9941, d:0},
-      {n:'Yenikapı',        lon:28.9506, lat:41.0047, d:6},
-      {n:'Sirkeci',         lon:28.9748, lat:41.0147, d:0},
-      {n:'Üsküdar',         lon:29.0106, lat:41.0235, d:1},
-      {n:'Ayrılık Çeşmesi', lon:29.0307, lat:41.0183, d:3},
-      {n:'Acıbadem',        lon:29.0440, lat:41.0073, d:0},
-      {n:'Göztepe',         lon:29.0656, lat:40.9755, d:0},
-      {n:'Erenköy',         lon:29.0734, lat:40.9715, d:0},
-      {n:'Bostancı',        lon:29.0969, lat:40.9629, d:3},
-      {n:'Suadiye',         lon:29.1049, lat:40.9566, d:0},
-      {n:'Feneryolu',       lon:29.1235, lat:40.9487, d:2},
-      {n:'Küçükyalı',       lon:29.1435, lat:40.9363, d:0},
-      {n:'Maltepe',         lon:29.1543, lat:40.9297, d:0},
-      {n:'Cevizli',         lon:29.1618, lat:40.9236, d:0},
-      {n:'Atalar',          lon:29.1712, lat:40.9183, d:0},
-      {n:'Kartal',          lon:29.1872, lat:40.9106, d:0},
-      {n:'Pendik',          lon:29.2314, lat:40.8870, d:0},
-      {n:'Tuzla',           lon:29.2983, lat:40.8282, d:1},
-      {n:'Gebze',           lon:29.4300, lat:40.8018, d:0},
-    ];
-
-    const lineCoords = stations.map(s => [s.lon, s.lat]);
-    const lineFeature = {type:'Feature', geometry:{type:'LineString', coordinates: lineCoords}};
-
-    const proj = d3.geoMercator();
-    // Use MultiPoint of target-area stations to avoid geoBounds polygon winding issues
-    function multiPt(coords) {
-      return {type:'Feature', geometry:{type:'MultiPoint', coordinates: coords}};
-    }
-    if (idx === 14) {
-      // Zoom: Zeytinburnu → Üsküdar (Bosphorus crossing + Yenikapı focus)
-      const focus = stations.filter(s =>
-        s.lon >= 28.88 && s.lon <= 29.06 && s.lat >= 40.98
-      ).map(s => [s.lon, s.lat]);
-      proj.fitExtent([[24, 40], [mapW-24, mapH-60]], multiPt(focus));
-    } else if (idx === 15) {
-      // Zoom: Yenikapı → Feneryolu context (key incident stations)
-      const focus = stations.filter(s =>
-        s.lon >= 28.90 && s.lon <= 29.14 && s.lat >= 40.93
-      ).map(s => [s.lon, s.lat]);
-      proj.fitExtent([[24, 40], [mapW-24, mapH-60]], multiPt(focus));
-    } else {
-      proj.fitExtent([[22, 35], [mapW-22, mapH-45]], lineFeature);
-    }
-    const pathGen = d3.geoPath().projection(proj);
-
-    // Split line at tunnel
-    const euroCoords  = stations.slice(0, 11).map(s => [s.lon, s.lat]);
-    const tunnelCoords= stations.slice(10, 12).map(s => [s.lon, s.lat]);
-    const anatCoords  = stations.slice(11).map(s => [s.lon, s.lat]);
-
-    function geoLine(coords) {
-      return {type:'Feature', geometry:{type:'LineString', coordinates: coords}};
-    }
-
-    const lineCol = idx === 12 ? C.muted : '#374152';
-    const lineOp  = idx === 12 ? 0.38 : 0.75;
-    const lineW   = idx === 12 ? 2 : 2.8;
-
-    const lineG = g.append('g');
-
-    if (idx === 13) {
-      // Animated draw: stroke-dasharray trick
-      [euroCoords, anatCoords].forEach((coords, ci) => {
-        const pathEl = lineG.append('path')
-          .attr('d', pathGen(geoLine(coords)))
-          .attr('fill', 'none')
-          .attr('stroke', '#374152').attr('stroke-width', lineW)
-          .attr('stroke-opacity', lineOp).attr('stroke-linecap', 'round');
-        const node = pathEl.node();
-        if (node && node.getTotalLength) {
-          const len = node.getTotalLength();
-          pathEl.attr('stroke-dasharray', `${len} ${len}`)
-            .attr('stroke-dashoffset', len)
-            .transition().duration(1500).delay(ci * 200).ease(d3.easeLinear)
-            .attr('stroke-dashoffset', 0);
-        }
-      });
-    } else {
-      lineG.append('path').attr('d', pathGen(geoLine(euroCoords)))
-        .attr('fill','none').attr('stroke',lineCol)
-        .attr('stroke-width',lineW).attr('stroke-opacity',lineOp).attr('stroke-linecap','round');
-      lineG.append('path').attr('d', pathGen(geoLine(anatCoords)))
-        .attr('fill','none').attr('stroke',lineCol)
-        .attr('stroke-width',lineW).attr('stroke-opacity',lineOp).attr('stroke-linecap','round');
-    }
-    // Tunnel segment: always dashed
-    lineG.append('path').attr('d', pathGen(geoLine(tunnelCoords)))
-      .attr('fill','none').attr('stroke',idx===12?C.muted:'#374152')
-      .attr('stroke-width',lineW).attr('stroke-opacity',idx===12?0.28:0.55)
-      .attr('stroke-dasharray','6 4').attr('stroke-linecap','round');
-
-    // Bosphorus label (states 12-13)
-    if (idx <= 13) {
-      const bos = proj([28.993, 41.019]);
-      if (bos) g.append('text').attr('x',bos[0]).attr('y',bos[1])
-        .attr('text-anchor','middle').attr('fill',C.blue).attr('font-size',8)
-        .attr('font-family','DM Sans').attr('opacity',0.45).text('Boğaz tüneli');
-    }
-
-    // Continent labels (states 12-13)
-    if (idx <= 13) {
-      const eu = proj([28.84, 41.048]); const an = proj([29.22, 41.048]);
-      if (eu) g.append('text').attr('x',eu[0]).attr('y',eu[1]).attr('fill',C.muted)
-        .attr('font-size',8.5).attr('font-family','DM Sans').attr('opacity',0.5)
-        .text('← Avrupa');
-      if (an) g.append('text').attr('x',an[0]).attr('y',an[1]).attr('fill',C.muted)
-        .attr('font-size',8.5).attr('font-family','DM Sans').attr('opacity',0.5)
-        .text('Anadolu →');
-    }
-
-    // Station circles + labels
-    const stG = g.append('g');
-    stations.forEach((s, i) => {
-      const pt = proj([s.lon, s.lat]);
-      if (!pt) return;
-
-      const isIncident = s.d > 0;
-      const isFocus = (idx === 14 && s.n === 'Yenikapı') ||
-                      (idx === 15 && (s.n === 'Bostancı' || s.n === 'Yenikapı'));
-      const showLabel = (idx >= 13 && isIncident) || isFocus;
-
-      const r = idx === 12 ? 2 : (isIncident ? 3 + s.d * 1.3 : 2.2);
-      const col = isIncident ? C.accent : (idx === 12 ? C.muted : '#374152');
-      const op  = idx === 12 ? 0.45 : (isIncident ? 0.88 : 0.38);
-
-      if ((idx === 14 || idx === 15) && isFocus) {
-        stG.append('circle').attr('cx',pt[0]).attr('cy',pt[1]).attr('r',r+6)
-          .attr('fill','none').attr('stroke',C.accent).attr('stroke-width',1.5)
-          .attr('opacity',0).transition().duration(500).delay(80+i*20).attr('opacity',0.4);
-        stG.append('circle').attr('cx',pt[0]).attr('cy',pt[1]).attr('r',r+12)
-          .attr('fill','none').attr('stroke',C.accent).attr('stroke-width',0.8)
-          .attr('opacity',0).transition().duration(700).delay(120+i*20).attr('opacity',0.18);
-      }
-
-      stG.append('circle').attr('cx',pt[0]).attr('cy',pt[1]).attr('r',0)
-        .attr('fill', isIncident ? col : 'none')
-        .attr('stroke', col).attr('stroke-width', isIncident ? 0 : 1)
-        .attr('opacity', op)
-        .transition().duration(280).delay(i * 22)
-        .attr('r', r);
-
-      if (showLabel) {
-        const above = pt[1] > mapH * 0.55;
-        const dy = above ? -(r + 5) : (r + 11);
-        stG.append('text').attr('x',pt[0]).attr('y',pt[1]+dy)
-          .attr('text-anchor','middle').attr('fill',C.accent)
-          .attr('font-size', idx >= 14 ? 10.5 : 8.5).attr('font-weight','700')
-          .attr('font-family','DM Sans').text(s.n).attr('opacity',0)
-          .transition().duration(300).delay(i*22+220).attr('opacity',0.92);
-        if (s.d > 0) {
-          stG.append('text').attr('x',pt[0]).attr('y',pt[1]+dy+(idx>=14?13:11))
-            .attr('text-anchor','middle').attr('fill',C.muted)
-            .attr('font-size', idx >= 14 ? 9 : 7.5).attr('font-family','DM Sans')
-            .text(`${s.d} ölüm`).attr('opacity',0)
-            .transition().duration(300).delay(i*22+340).attr('opacity',0.7);
-        }
-      }
-    });
-  }
 }
+
 
 // ═══════════════════════════════════════════════════════════
 // INTERSECTION OBSERVER — step activation + chart state
