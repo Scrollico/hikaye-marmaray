@@ -1192,19 +1192,26 @@ function playHeroMap() {
           }
         }
         if (lyr.type === 'line' && /road|bridge|tunnel/.test(lyr.id)) {
-          map.setPaintProperty(lyr.id, 'line-color', '#ddd5c0');
-          map.setPaintProperty(lyr.id, 'line-opacity', /motorway|trunk/.test(lyr.id) ? 0.45 : 0.22);
+          try { map.setPaintProperty(lyr.id, 'line-color', '#ddd5c0'); } catch(e){}
+          try { map.setPaintProperty(lyr.id, 'line-opacity', /motorway|trunk/.test(lyr.id) ? 0.45 : 0.22); } catch(e){}
+        }
+        // Type-based fill palette — robust across Mapbox style versions
+        if (lyr.type === 'fill' || lyr.type === 'background') {
+          const id = lyr.id;
+          try {
+            if (/^water/.test(id))                           map.setPaintProperty(id, 'fill-color', '#a8bfcf');
+            else if (/^national.park/.test(id))              map.setPaintProperty(id, 'fill-color', '#dde8d0');
+            else if (/^building/.test(id)) {
+              map.setPaintProperty(id, 'fill-color',   '#dcd6c4');
+              map.setPaintProperty(id, 'fill-opacity', 0.55);
+            }
+            else if (/^aeroway/.test(id))                    map.setPaintProperty(id, 'fill-color', '#e3ddd0');
+            else if (/^landuse/.test(id))                    map.setPaintProperty(id, 'fill-color', '#e9e3ce');
+            else if (/^land/.test(id))                       map.setPaintProperty(id, 'fill-color', '#efe9d0');
+            else if (lyr.type === 'background')              map.setPaintProperty(id, 'background-color', '#efe9d0');
+          } catch(e) {}
         }
       });
-      const tp = (id,p,v) => { try { if (map.getLayer(id)) map.setPaintProperty(id,p,v); } catch(e){} };
-      tp('water',          'fill-color', '#a8bfcf');
-      tp('land',           'fill-color', '#efe9d0');
-      tp('land-structure', 'fill-color', '#efe9d0');
-      tp('national-park',  'fill-color', '#dde8d0');
-      tp('landuse',        'fill-color', '#e9e3ce');
-      tp('building',       'fill-color', '#dcd6c4');
-      tp('building',       'fill-opacity', 0.55);
-      tp('background',     'background-color', '#efe9d0');
     } catch(e) {}
 
     // ── Marmaray: native Mapbox line layer (crisp at all zooms) ──
