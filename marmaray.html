@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>window.MAPBOX_TOKEN=atob('cGsuZXlKMUlqb2libWgwZG1NaUxDSmhJam9pWTJ4dVpHWnNZbnAxTURSNGFESnBkelZvZFdjM2MzTmxOQ0o5LlExT2paQmxmS0NqTVEwWWJEOTJ6bXc=');</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600;8..60,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
@@ -1223,11 +1224,25 @@ function playHeroMap() {
         properties: {}
       }
     });
+    // Soft glow underlay (wide blur, purple tint, static opacity)
+    map.addLayer({
+      id: 'marmaray-underlay', type: 'line', source: 'marmaray-src',
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: {
+        'line-width': 7,
+        'line-blur':  4,
+        'line-color': '#8080FF',
+        'line-opacity': 0,
+        'line-opacity-transition': { duration: 2000, delay: 0 },
+      }
+    });
+    // Sharp animated line on top
     map.addLayer({
       id: 'marmaray-line', type: 'line', source: 'marmaray-src',
       layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: {
-        'line-width': isMob ? 3.5 : 3,
+        'line-width': ['interpolate',['linear'],['zoom'], 9,1.5, 14,2.0, 17,2.5],
+        'line-blur':  0.5,
         'line-gradient': ['interpolate',['linear'],['line-progress'],
           0,'rgba(42,35,32,0)', 1,'rgba(42,35,32,0)']
       }
@@ -1291,6 +1306,90 @@ function playHeroMap() {
       }
     }, 'stations-glow');
     map.setFog({ range: [3, 14], color: '#ede8d5', 'horizon-blend': 0.04 });
+
+    // ── 3D train custom layer (Three.js) ──────────────────────────
+    {
+      const _lc = HS.map(s => [s.lon, s.lat]);
+      const _ld = [0];
+      for (let i = 1; i < _lc.length; i++) {
+        const dx = _lc[i][0]-_lc[i-1][0], dy = _lc[i][1]-_lc[i-1][1];
+        _ld.push(_ld[i-1] + Math.sqrt(dx*dx+dy*dy));
+      }
+      const _ltd = _ld[_ld.length-1];
+
+      function _tpos(t) { // t 0..1 over station segment 6→12
+        const ts = _ld[6]/_ltd, te = _ld[12]/_ltd;
+        const lt = ts + Math.max(0, Math.min(1,t)) * (te-ts);
+        const d  = lt * _ltd;
+        let i = 0;
+        while (i < _ld.length-2 && _ld[i+1] < d) i++;
+        const seg = _ld[i+1]-_ld[i];
+        const f   = seg > 0 ? (d-_ld[i])/seg : 0;
+        const lon = _lc[i][0] + f*(_lc[i+1][0]-_lc[i][0]);
+        const lat = _lc[i][1] + f*(_lc[i+1][1]-_lc[i][1]);
+        const ni  = Math.min(i+1, _lc.length-1);
+        const brg = Math.atan2(_lc[ni][0]-_lc[i][0], _lc[ni][1]-_lc[i][1]) * 180/Math.PI;
+        return { lon, lat, brg };
+      }
+
+      let _tAnim = false, _tStart = 0, _tFollow = false;
+      const _TDUR = isMob ? 8000 : 9000;
+
+      const trainLayer = {
+        id:'train-3d', type:'custom', renderingMode:'3d',
+        onAdd(m, gl) {
+          if (!window.THREE) return;
+          const T3 = window.THREE;
+          this.scene    = new T3.Scene();
+          this.camera   = new T3.Camera();
+          this.renderer = new T3.WebGLRenderer({ canvas: m.getCanvas(), context: gl, antialias: true });
+          this.renderer.autoClear = false;
+          const dark   = new T3.MeshPhongMaterial({ color: 0x2a2320 });
+          const accent = new T3.MeshPhongMaterial({ color: 0x8080ff });
+          const winMat = new T3.MeshPhongMaterial({ color: 0xb8ccd8, transparent: true, opacity: 0.85 });
+          const body   = new T3.Mesh(new T3.BoxGeometry(22, 3.0, 2.8), dark);
+          const nose   = new T3.Mesh(new T3.BoxGeometry(0.8, 3.0, 2.8), accent);
+          nose.position.x = 11;
+          for (let w = -8; w <= 8; w += 4) {
+            const wm = new T3.Mesh(new T3.BoxGeometry(1.6, 1.0, 0.05), winMat);
+            wm.position.set(w, 0.6, 1.42);
+            body.add(wm);
+          }
+          const g = new T3.Group();
+          g.add(body); g.add(nose);
+          this.scene.add(new T3.AmbientLight(0xffe8d0, 0.65));
+          const dl = new T3.DirectionalLight(0xffffff, 0.9);
+          dl.position.set(0, 100, 100);
+          this.scene.add(dl); this.scene.add(g);
+          this.tg = g; this._m = m; this._T3 = T3;
+        },
+        render(gl, matrix) {
+          if (!_tAnim || !this.tg) { if (this.renderer) this.renderer.resetState(); return; }
+          const T3 = this._T3;
+          const t  = Math.min(1, (performance.now() - _tStart) / _TDUR);
+          const p  = _tpos(t);
+          const mc = mapboxgl.MercatorCoordinate.fromLngLat([p.lon, p.lat], 1.5);
+          const sc = mc.meterInMercatorCoordinateUnits();
+          const br = p.brg * Math.PI / 180;
+          const l  = new T3.Matrix4()
+            .makeTranslation(mc.x, mc.y, mc.z)
+            .scale(new T3.Vector3(sc, -sc, sc))
+            .multiply(new T3.Matrix4().makeRotationZ(-br))
+            .multiply(new T3.Matrix4().makeRotationX(Math.PI/2));
+          this.camera.projectionMatrix = new T3.Matrix4().fromArray(matrix).multiply(l);
+          this.renderer.resetState();
+          this.renderer.render(this.scene, this.camera);
+          this._m.triggerRepaint();
+          if (_tFollow) this._m.jumpTo({ center:[p.lon, p.lat], bearing: p.brg, pitch: 65, zoom: 16 });
+        }
+      };
+      try { map.addLayer(trainLayer, 'stations-glow'); } catch(e) {}
+
+      // Expose train controls to startCinematic scope
+      map._trainCtrl = { get tAnim(){ return _tAnim; }, set tAnim(v){ _tAnim=v; },
+                         get tStart(){ return _tStart; }, set tStart(v){ _tStart=v; },
+                         get tFollow(){ return _tFollow; }, set tFollow(v){ _tFollow=v; } };
+    }
 
     // ── Metro context: native Mapbox layer ───────────────────────
     fetch('/media-assets/maps/' + encodeURIComponent('metro hatları.geojson'))
@@ -1370,6 +1469,7 @@ function playHeroMap() {
       heroText('209 km ray. 43 istasyon. <strong>Boğaz\'ın altından</strong> geçen tek metro hattı.');
       lineDrawing = true; lineDrawStart = performance.now();
       requestAnimationFrame(tickLine);
+      try { map.setPaintProperty('marmaray-underlay', 'line-opacity', 0.25); } catch(e) {}
       // Stations fade in over same duration as line draw
       try {
         map.setPaintProperty('stations-dot',  'circle-opacity',
@@ -1381,16 +1481,26 @@ function playHeroMap() {
     }, T.lineDraw);
     setTimeout(() => heroText(null), T.txt2Off);
 
-    // Beat 2b — 3D street-level dive into Yenikapı
+    // Beat 2b — 3D street-level dive + train
     setTimeout(() => {
       try { map.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.85); } catch(e) {}
+      if (map._trainCtrl) { map._trainCtrl.tAnim = true; map._trainCtrl.tStart = performance.now(); }
       map.flyTo({
         center: [28.9506, 41.0047], zoom: 16.2, pitch: 74, bearing: BEARING,
         duration: T.zoom3dDur, essential: true,
         easing: t => 1 - Math.pow(1 - t, 3),
       });
     }, T.zoom3d);
+    // Enable camera-follow when fly-down completes
     setTimeout(() => {
+      if (map._trainCtrl) map._trainCtrl.tFollow = true;
+    }, T.zoom3d + T.zoom3dDur + 200);
+    // Disable follow before flying back
+    setTimeout(() => {
+      if (map._trainCtrl) map._trainCtrl.tFollow = false;
+    }, T.zoom3dBack - 600);
+    setTimeout(() => {
+      if (map._trainCtrl) map._trainCtrl.tAnim = false;
       try { map.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0); } catch(e) {}
       map.flyTo({
         center: MAP_CENTER, zoom: ZOOM_INIT, pitch: PITCH_INIT, bearing: BEARING,
