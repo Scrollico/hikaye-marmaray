@@ -10,7 +10,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>window.MAPBOX_TOKEN=atob('cGsuZXlKMUlqb2libWgwZG1NaUxDSmhJam9pWTJ4dVpHWnNZbnAxTURSNGFESnBkelZvZFdjM2MzTmxOQ0o5LlExT2paQmxmS0NqTVEwWWJEOTJ6bXc=');</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600;8..60,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
@@ -233,6 +232,35 @@ body {
 /* suppress Mapbox branding in cinematic view */
 .mapboxgl-ctrl-logo,
 .mapboxgl-ctrl-attrib { display: none !important; }
+
+/* ── Hero scrolly sentinel divs ── */
+#hero-scrolly {
+  position: relative;
+  z-index: 5;
+  pointer-events: none;
+}
+.map-step {
+  height: 100vh;
+  pointer-events: none;
+}
+
+/* ── Map date stamp ── */
+#map-date-stamp {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 12;
+  font-family: 'Courier Prime', monospace;
+  font-size: clamp(10px, 1.5vw, 13px);
+  color: #374152;
+  background: rgba(248,245,228,0.85);
+  border: 1px solid rgba(55,65,82,0.12);
+  padding: 3px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
 #hero-text {
   position: absolute;
   bottom: 13%;
@@ -247,7 +275,7 @@ body {
   transform: translateX(-50%) translateY(12px);
   transition: opacity 0.65s ease, transform 0.65s ease;
   pointer-events: none;
-  z-index: 5;
+  z-index: 10;
   text-shadow: 0 2px 14px rgba(240,235,220,0.97), 0 0 32px rgba(240,235,220,0.85);
 }
 #hero-text.visible {
@@ -615,6 +643,13 @@ body {
 <div id="hero-map-canvas">
   <svg id="hero-map-svg" viewBox="0 0 800 440" preserveAspectRatio="xMidYMid meet"></svg>
   <div id="hero-text"></div>
+</div>
+
+<!-- ════════════════════ HERO SCROLLY STEPS ════════════════════ -->
+<div id="hero-scrolly">
+  <div class="map-step" data-step="0"></div>
+  <div class="map-step" data-step="1"></div>
+  <div class="map-step" data-step="2"></div>
 </div>
 
 <!-- ════════════════════ SHARED VIZ PANEL ════════════════════ -->
@@ -1229,8 +1264,8 @@ function playHeroMap() {
       id: 'marmaray-underlay', type: 'line', source: 'marmaray-src',
       layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: {
-        'line-width': 7,
-        'line-blur':  4,
+        'line-width': 8,
+        'line-blur':  6,
         'line-color': '#8080FF',
         'line-opacity': 0,
         'line-opacity-transition': { duration: 2000, delay: 0 },
@@ -1241,8 +1276,8 @@ function playHeroMap() {
       id: 'marmaray-line', type: 'line', source: 'marmaray-src',
       layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: {
-        'line-width': ['interpolate',['linear'],['zoom'], 9,1.5, 14,2.0, 17,2.5],
-        'line-blur':  0.5,
+        'line-width': 2.5,
+        'line-blur':  0.4,
         'line-gradient': ['interpolate',['linear'],['line-progress'],
           0,'rgba(42,35,32,0)', 1,'rgba(42,35,32,0)']
       }
@@ -1293,104 +1328,6 @@ function playHeroMap() {
       }
     });
 
-    // ── 3D buildings (beat 2b street-level) ─────────────────────
-    map.addLayer({
-      id: '3d-buildings', source: 'composite', 'source-layer': 'building',
-      type: 'fill-extrusion', minzoom: 14,
-      paint: {
-        'fill-extrusion-color':   '#d8d2c0',
-        'fill-extrusion-height':  ['interpolate',['linear'],['zoom'], 14,0, 16,['get','height']],
-        'fill-extrusion-base':    ['get','min_height'],
-        'fill-extrusion-opacity': 0,
-        'fill-extrusion-opacity-transition': { duration: 1200, delay: 0 },
-      }
-    }, 'stations-glow');
-    map.setFog({ range: [3, 14], color: '#ede8d5', 'horizon-blend': 0.04 });
-
-    // ── 3D train custom layer (Three.js) ──────────────────────────
-    {
-      const _lc = HS.map(s => [s.lon, s.lat]);
-      const _ld = [0];
-      for (let i = 1; i < _lc.length; i++) {
-        const dx = _lc[i][0]-_lc[i-1][0], dy = _lc[i][1]-_lc[i-1][1];
-        _ld.push(_ld[i-1] + Math.sqrt(dx*dx+dy*dy));
-      }
-      const _ltd = _ld[_ld.length-1];
-
-      function _tpos(t) { // t 0..1 over station segment 6→12
-        const ts = _ld[6]/_ltd, te = _ld[12]/_ltd;
-        const lt = ts + Math.max(0, Math.min(1,t)) * (te-ts);
-        const d  = lt * _ltd;
-        let i = 0;
-        while (i < _ld.length-2 && _ld[i+1] < d) i++;
-        const seg = _ld[i+1]-_ld[i];
-        const f   = seg > 0 ? (d-_ld[i])/seg : 0;
-        const lon = _lc[i][0] + f*(_lc[i+1][0]-_lc[i][0]);
-        const lat = _lc[i][1] + f*(_lc[i+1][1]-_lc[i][1]);
-        const ni  = Math.min(i+1, _lc.length-1);
-        const brg = Math.atan2(_lc[ni][0]-_lc[i][0], _lc[ni][1]-_lc[i][1]) * 180/Math.PI;
-        return { lon, lat, brg };
-      }
-
-      let _tAnim = false, _tStart = 0, _tFollow = false;
-      const _TDUR = isMob ? 8000 : 9000;
-
-      const trainLayer = {
-        id:'train-3d', type:'custom', renderingMode:'3d',
-        onAdd(m, gl) {
-          if (!window.THREE) return;
-          const T3 = window.THREE;
-          this.scene    = new T3.Scene();
-          this.camera   = new T3.Camera();
-          this.renderer = new T3.WebGLRenderer({ canvas: m.getCanvas(), context: gl, antialias: true });
-          this.renderer.autoClear = false;
-          const dark   = new T3.MeshPhongMaterial({ color: 0x2a2320 });
-          const accent = new T3.MeshPhongMaterial({ color: 0x8080ff });
-          const winMat = new T3.MeshPhongMaterial({ color: 0xb8ccd8, transparent: true, opacity: 0.85 });
-          const body   = new T3.Mesh(new T3.BoxGeometry(22, 3.0, 2.8), dark);
-          const nose   = new T3.Mesh(new T3.BoxGeometry(0.8, 3.0, 2.8), accent);
-          nose.position.x = 11;
-          for (let w = -8; w <= 8; w += 4) {
-            const wm = new T3.Mesh(new T3.BoxGeometry(1.6, 1.0, 0.05), winMat);
-            wm.position.set(w, 0.6, 1.42);
-            body.add(wm);
-          }
-          const g = new T3.Group();
-          g.add(body); g.add(nose);
-          this.scene.add(new T3.AmbientLight(0xffe8d0, 0.65));
-          const dl = new T3.DirectionalLight(0xffffff, 0.9);
-          dl.position.set(0, 100, 100);
-          this.scene.add(dl); this.scene.add(g);
-          this.tg = g; this._m = m; this._T3 = T3;
-        },
-        render(gl, matrix) {
-          if (!_tAnim || !this.tg) { if (this.renderer) this.renderer.resetState(); return; }
-          const T3 = this._T3;
-          const t  = Math.min(1, (performance.now() - _tStart) / _TDUR);
-          const p  = _tpos(t);
-          const mc = mapboxgl.MercatorCoordinate.fromLngLat([p.lon, p.lat], 1.5);
-          const sc = mc.meterInMercatorCoordinateUnits();
-          const br = p.brg * Math.PI / 180;
-          const l  = new T3.Matrix4()
-            .makeTranslation(mc.x, mc.y, mc.z)
-            .scale(new T3.Vector3(sc, -sc, sc))
-            .multiply(new T3.Matrix4().makeRotationZ(-br))
-            .multiply(new T3.Matrix4().makeRotationX(Math.PI/2));
-          this.camera.projectionMatrix = new T3.Matrix4().fromArray(matrix).multiply(l);
-          this.renderer.resetState();
-          this.renderer.render(this.scene, this.camera);
-          this._m.triggerRepaint();
-          if (_tFollow) this._m.jumpTo({ center:[p.lon, p.lat], bearing: p.brg, pitch: 65, zoom: 16 });
-        }
-      };
-      try { map.addLayer(trainLayer, 'stations-glow'); } catch(e) {}
-
-      // Expose train controls to startCinematic scope
-      map._trainCtrl = { get tAnim(){ return _tAnim; }, set tAnim(v){ _tAnim=v; },
-                         get tStart(){ return _tStart; }, set tStart(v){ _tStart=v; },
-                         get tFollow(){ return _tFollow; }, set tFollow(v){ _tFollow=v; } };
-    }
-
     // ── Metro context: native Mapbox layer ───────────────────────
     fetch('/media-assets/maps/' + encodeURIComponent('metro hatları.geojson'))
       .then(r => r.ok ? r.json() : null)
@@ -1424,139 +1361,255 @@ function playHeroMap() {
   // Failsafe — start anyway if tiles stall
   setTimeout(() => { if (!mapReady) { mapReady = true; map.triggerRepaint(); startCinematic(); } }, 8000);
 
-  // ── Cinematic timeline — ~25s desktop / ~21s mobile ──
+  // ── Scroll-driven 3-step hero map ────────────────────────────
   function startCinematic() {
-    const T = isMob ? {
-      // Beat 1: context fades in, opening text
-      txt1:700,    metroIn:900,
-      // Beat 2: line draws, second text
-      lineDraw:2800, txt2:2800, txt2Off:6500,
-      // Beat 2b: 3D street-level dive (Yenikapı)
-      zoom3d:7000, zoom3dDur:4500, zoom3dBack:14700, zoom3dBackDur:1800,
-      // Beat 3: Bostancı
-      zoomBo:17000, zBoDur:1300, txt3:17800, pulse3:18600, txt3Off:22200,
-      // Beat 4: Yenikapı
-      zoomYk:22500, zYkDur:1100, txt4:23300, pulse4:23800, txt4Off:27300,
-      // Beat 5: pull back
-      zoomOut:27500, zOutDur:900, allPulse:28500, txt5:28100, txt5Off:31400,
-      fadeOut:31700,
-    } : {
-      // Beat 1
-      txt1:800,    metroIn:1000,
-      // Beat 2
-      lineDraw:3200, txt2:3200, txt2Off:8500,
-      // Beat 2b: 3D street-level dive (Yenikapı)
-      zoom3d:9000, zoom3dDur:5500, zoom3dBack:17700, zoom3dBackDur:2000,
-      // Beat 3
-      zoomBo:20200, zBoDur:1600, txt3:21100, pulse3:22000, txt3Off:25900,
-      // Beat 4
-      zoomYk:26200, zYkDur:1400, txt4:27100, pulse4:27700, txt4Off:31900,
-      // Beat 5
-      zoomOut:32200, zOutDur:1200, allPulse:33400, txt5:33000, txt5Off:36600,
-      fadeOut:36900,
-    };
-
-    // Beat 1 — land/sea geography visible, opening context text
-    setTimeout(() => heroText(
-      'İstanbul\'un iki yakasını bağlayan Marmaray, 2013\'te açıldı. Günde <strong>2.2 milyon yolcu</strong> taşıyor.'
-    ), T.txt1);
-    setTimeout(() => {
-      try { map.setPaintProperty('metro-context','line-opacity',1); } catch(e) {}
-    }, T.metroIn);
-
-    // Beat 2 — Marmaray line draws west→east, second text
-    setTimeout(() => {
-      heroText('209 km ray. 43 istasyon. <strong>Boğaz\'ın altından</strong> geçen tek metro hattı.');
-      lineDrawing = true; lineDrawStart = performance.now();
-      requestAnimationFrame(tickLine);
-      try { map.setPaintProperty('marmaray-underlay', 'line-opacity', 0.25); } catch(e) {}
-      // Stations fade in over same duration as line draw
-      try {
-        map.setPaintProperty('stations-dot',  'circle-opacity',
-          ['case',['>', ['get','incidents'],0], 0.9, 0.38]);
-        map.setPaintProperty('stations-dot',  'circle-stroke-opacity',
-          ['case',['>', ['get','incidents'],0], 0, 0.45]);
-        map.setPaintProperty('stations-glow', 'circle-opacity', 0.22);
-      } catch(e) {}
-    }, T.lineDraw);
-    setTimeout(() => heroText(null), T.txt2Off);
-
-    // Beat 2b — 3D street-level dive + train
-    setTimeout(() => {
-      try { map.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.85); } catch(e) {}
-      if (map._trainCtrl) { map._trainCtrl.tAnim = true; map._trainCtrl.tStart = performance.now(); }
-      map.flyTo({
-        center: [28.9506, 41.0047], zoom: 16.2, pitch: 74, bearing: BEARING,
-        duration: T.zoom3dDur, essential: true,
-        easing: t => 1 - Math.pow(1 - t, 3),
-      });
-    }, T.zoom3d);
-    // Enable camera-follow when fly-down completes
-    setTimeout(() => {
-      if (map._trainCtrl) map._trainCtrl.tFollow = true;
-    }, T.zoom3d + T.zoom3dDur + 200);
-    // Disable follow before flying back
-    setTimeout(() => {
-      if (map._trainCtrl) map._trainCtrl.tFollow = false;
-    }, T.zoom3dBack - 600);
-    setTimeout(() => {
-      if (map._trainCtrl) map._trainCtrl.tAnim = false;
-      try { map.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0); } catch(e) {}
+    // Step 0: intro context — draw line, show metro, opening text
+    function goOverview() {
       map.flyTo({
         center: MAP_CENTER, zoom: ZOOM_INIT, pitch: PITCH_INIT, bearing: BEARING,
-        duration: T.zoom3dBackDur, essential: true,
-        easing: t => t * (2 - t),
+        duration: 2400, essential: true,
+        easing: t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2,
       });
-    }, T.zoom3dBack);
-
-    // Beat 3 — zoom Bostancı
-    setTimeout(() => map.flyTo({
-      center:[29.0969,40.9629], zoom:ZOOM_CLOSE, pitch:45, bearing:BEARING,
-      duration:T.zBoDur, essential:true
-    }), T.zoomBo);
-    setTimeout(() => heroText(
-      '<strong>30 Ekim 2021, 18:18.</strong> Bostancı istasyonu. Bir kişi raylara atladı. Ölümle sonuçlanan ilk intihar.'
-    ), T.txt3);
-    setTimeout(() => addPulse(29.0969, 40.9629), T.pulse3);
-    setTimeout(() => heroText(null), T.txt3Off);
-
-    // Beat 4 — pan Yenikapı, 6 rings sequentially (0.3s apart)
-    setTimeout(() => map.flyTo({
-      center:[28.9506,41.0047], zoom:ZOOM_CLOSE, pitch:45, bearing:BEARING,
-      duration:T.zYkDur, essential:true
-    }), T.zoomYk);
-    setTimeout(() => heroText(
-      'Yenikapı. İstanbul\'un en işlek aktarma noktası. Dört yılda <strong>6 can kaybı</strong> yaşandı.'
-    ), T.txt4);
-    setTimeout(() => {
-      for (let k = 0; k < 6; k++) setTimeout(() => addPulse(28.9506,41.0047), k * 300);
-    }, T.pulse4);
-    setTimeout(() => heroText(null), T.txt4Off);
-
-    // Beat 5 — pull back, all incident stations pulse in unison
-    setTimeout(() => map.flyTo({
-      center:MAP_CENTER, zoom:ZOOM_INIT, pitch:PITCH_INIT, bearing:BEARING,
-      duration:T.zOutDur, essential:true
-    }), T.zoomOut);
-    setTimeout(() => HS.filter(s => s.d > 0).forEach(s => addPulse(s.lon, s.lat)), T.allPulse);
-    setTimeout(() => heroText(
-      '<strong>29 olay. 20 ölüm.</strong> Dört yılda. Ve sayı her yıl artıyor.'
-    ), T.txt5);
-    setTimeout(() => heroText(null), T.txt5Off);
-
-    // Finale — canvas fades, title fades in
-    setTimeout(() => {
-      renderActive = false;
-      heroText(null);
-      d3.select(canvas).transition().duration(2500).ease(d3.easeLinear)
-        .style('opacity', 0)
-        .on('end', () => { try { map.remove(); } catch(e){} endCinematic(); });
-      if (titleLayer) {
-        titleLayer.style.transition = 'opacity 2s ease';
-        titleLayer.style.opacity    = '1';
-        titleLayer.style.pointerEvents = 'auto';
+      heroText('İstanbul\'un iki yakasını bağlayan Marmaray, 2013\'te açıldı. 209 km ray. <strong>Boğaz\'ın altından</strong> geçen tek metro hattı.');
+      try { map.setPaintProperty('metro-context','line-opacity',1); } catch(e) {}
+      if (!lineDrawing && lineRawProg === 0) {
+        lineDrawing = true; lineDrawStart = performance.now();
+        requestAnimationFrame(tickLine);
       }
-    }, T.fadeOut);
+      try { map.setPaintProperty('marmaray-underlay', 'line-opacity', 0.18); } catch(e) {}
+      try {
+        map.setPaintProperty('stations-dot','circle-opacity',['case',['>', ['get','incidents'],0], 0.9, 0.38]);
+        map.setPaintProperty('stations-dot','circle-stroke-opacity',['case',['>', ['get','incidents'],0], 0, 0.45]);
+        map.setPaintProperty('stations-glow','circle-opacity', 0.22);
+      } catch(e) {}
+      // Marmaray label
+      showAnnotation('marmaray-label', true);
+      showAnnotation('geo-labels', true);
+      showAnnotation('legend', true);
+      showAnnotation('date-stamp', false);
+    }
+
+    // Step 1: first incident — Bostancı
+    function goBostanci() {
+      map.flyTo({
+        center:[29.0969, 40.9629], zoom: ZOOM_CLOSE, pitch: 45, bearing: BEARING,
+        duration: 2400, essential: true,
+        easing: t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2,
+      });
+      heroText('<strong>30 Ekim 2021, 18:18.</strong> Bostancı istasyonu. Bir kişi raylara atladı. Ölümle sonuçlanan ilk intihar.');
+      setTimeout(() => addPulse(29.0969, 40.9629), 800);
+      showAnnotation('date-stamp', true);
+      showAnnotation('station-label-bostanci', true);
+    }
+
+    // Step 2: pattern — Yenikapı worst station, pull back for all
+    function goPattern() {
+      map.flyTo({
+        center:[28.9506, 41.0047], zoom: ZOOM_CLOSE, pitch: 45, bearing: BEARING,
+        duration: 2400, essential: true,
+        easing: t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2,
+      });
+      heroText('Yenikapı. İstanbul\'un en işlek aktarma noktası. Dört yılda <strong>6 can kaybı</strong>.');
+      for (let k = 0; k < 6; k++) setTimeout(() => addPulse(28.9506, 41.0047), k * 300 + 600);
+      showAnnotation('date-stamp', false);
+      showAnnotation('station-label-bostanci', false);
+      showAnnotation('station-label-yenikapi', true);
+      // After 3s pull back and show all
+      setTimeout(() => {
+        map.flyTo({
+          center: MAP_CENTER, zoom: ZOOM_INIT, pitch: PITCH_INIT, bearing: BEARING,
+          duration: 2400, essential: true,
+          easing: t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2,
+        });
+        heroText('<strong>29 olay. 20 ölüm.</strong> Dört yılda. Ve sayı her yıl artıyor.');
+        setTimeout(() => HS.filter(s => s.d > 0).forEach(s => addPulse(s.lon, s.lat)), 1200);
+        showAnnotation('station-label-yenikapi', false);
+        showAnnotation('top-station-labels', true);
+      }, 3000);
+    }
+
+    // ── Annotation helpers ────────────────────────────────────────
+    const annos = {};
+
+    function showAnnotation(id, visible) {
+      if (annos[id]) annos[id].style.opacity = visible ? '1' : '0';
+    }
+
+    // ── Build SVG annotations ─────────────────────────────────────
+    function buildAnnotations() {
+      const svgNode = svgEl;
+      const w = svgNode.clientWidth  || 800;
+      const h = svgNode.clientHeight || 440;
+
+      // Legend — bottom-right
+      const lg = svg.append('g').attr('id','legend-g')
+        .attr('transform', `translate(${w - (isMob?120:140)},${h - (isMob?72:80)})`)
+        .style('opacity','0').style('transition','opacity 0.8s ease');
+      annos['legend'] = lg.node();
+      const legendData = [
+        { color:'#8080FF', r:8, label:'6 vaka' },
+        { color:'#8080FF', r:5, label:'3 vaka' },
+        { color:'#374152', r:2.5, label:'Diğer istasyonlar' },
+      ];
+      lg.append('rect').attr('x',-8).attr('y',-14).attr('width', isMob?116:132).attr('height',isMob?68:76)
+        .attr('rx',4).attr('fill','rgba(248,245,228,0.9)').attr('stroke','rgba(55,65,82,0.12)').attr('stroke-width',1);
+      legendData.forEach((d, i) => {
+        const y = i * (isMob ? 20 : 22) + 6;
+        lg.append('circle').attr('cx',8).attr('cy',y).attr('r',d.r).attr('fill',d.color).attr('opacity',0.85);
+        lg.append('text').attr('x',20).attr('y',y+4)
+          .attr('font-size', isMob?'9px':'10px').attr('font-family','DM Sans,sans-serif')
+          .attr('fill','#374152').text(d.label);
+      });
+
+      // Geographic anchors (faint text)
+      const geoG = svg.append('g').attr('id','geo-labels-g')
+        .style('opacity','0').style('transition','opacity 1s ease');
+      annos['geo-labels'] = geoG.node();
+      const geoLabels = [
+        { text:'Avrupa Yakası', lon:28.82, lat:41.03 },
+        { text:'Anadolu Yakası', lon:29.15, lat:40.97 },
+        { text:'Marmara Denizi', lon:28.95, lat:40.90 },
+      ];
+      geoLabels.forEach(gl => {
+        const pt = project(gl.lon, gl.lat);
+        if (!pt) return;
+        geoG.append('text').attr('x', pt[0]).attr('y', pt[1])
+          .attr('text-anchor','middle')
+          .attr('font-size', isMob ? '8px' : '10px')
+          .attr('font-family','DM Sans,sans-serif')
+          .attr('fill','#8a7d6b').attr('opacity','0.55')
+          .attr('letter-spacing','0.08em')
+          .text(gl.text.toUpperCase());
+      });
+
+      // Marmaray line label — italic, midpoint
+      const midS = HS[Math.floor(HS.length/2)];
+      const midPt = project(midS.lon, midS.lat);
+      const mlG = svg.append('g').attr('id','marmaray-label-g')
+        .style('opacity','0').style('transition','opacity 0.8s ease');
+      annos['marmaray-label'] = mlG.node();
+      if (midPt) {
+        mlG.append('text').attr('x', midPt[0]).attr('y', midPt[1] - 10)
+          .attr('text-anchor','middle')
+          .attr('font-size', isMob ? '9px' : '11px')
+          .attr('font-family','Source Serif 4,serif')
+          .attr('font-style','italic').attr('fill','#8080FF').attr('opacity','0.8')
+          .text('Marmaray');
+      }
+
+      // Station label: Bostancı
+      const boS = HS.find(s => s.n === 'Bostancı');
+      if (boS) {
+        const pt = project(boS.lon, boS.lat);
+        const slG = svg.append('g').attr('id','station-label-bostanci-g')
+          .style('opacity','0').style('transition','opacity 0.6s ease');
+        annos['station-label-bostanci'] = slG.node();
+        if (pt) {
+          const lx = pt[0] + (isMob ? 14 : 16), ly = pt[1] - 6;
+          slG.append('line').attr('x1',pt[0]+5).attr('y1',pt[1]-2).attr('x2',lx-2).attr('y2',ly)
+            .attr('stroke','#374152').attr('stroke-width','0.8').attr('opacity','0.6');
+          slG.append('text').attr('x',lx).attr('y',ly)
+            .attr('font-size', isMob?'9px':'11px').attr('font-family','DM Sans,sans-serif')
+            .attr('fill','#374152').text('Bostancı');
+        }
+      }
+
+      // Station label: Yenikapı
+      const ykS = HS.find(s => s.n === 'Yenikapı');
+      if (ykS) {
+        const pt = project(ykS.lon, ykS.lat);
+        const slG = svg.append('g').attr('id','station-label-yenikapi-g')
+          .style('opacity','0').style('transition','opacity 0.6s ease');
+        annos['station-label-yenikapi'] = slG.node();
+        if (pt) {
+          const lx = pt[0] + (isMob ? 14 : 16), ly = pt[1] - 6;
+          slG.append('line').attr('x1',pt[0]+5).attr('y1',pt[1]-2).attr('x2',lx-2).attr('y2',ly)
+            .attr('stroke','#8080FF').attr('stroke-width','0.8').attr('opacity','0.6');
+          slG.append('text').attr('x',lx).attr('y',ly)
+            .attr('font-size', isMob?'9px':'11px').attr('font-family','DM Sans,sans-serif')
+            .attr('fill','#8080FF').text('Yenikapı · 6 vaka');
+        }
+      }
+
+      // Top station labels (shown in step 2 overview)
+      const topStations = HS.filter(s => s.d >= 2);
+      const tsG = svg.append('g').attr('id','top-station-labels-g')
+        .style('opacity','0').style('transition','opacity 0.8s ease');
+      annos['top-station-labels'] = tsG.node();
+      topStations.forEach(s => {
+        const pt = project(s.lon, s.lat);
+        if (!pt) return;
+        const lx = pt[0] + (isMob ? 12 : 14), ly = pt[1] - 5;
+        tsG.append('line').attr('x1',pt[0]+4).attr('y1',pt[1]-2).attr('x2',lx-2).attr('y2',ly)
+          .attr('stroke','#8080FF').attr('stroke-width','0.7').attr('opacity','0.5');
+        tsG.append('text').attr('x',lx).attr('y',ly)
+          .attr('font-size', isMob?'8px':'10px').attr('font-family','DM Sans,sans-serif')
+          .attr('fill','#374152')
+          .text(`${s.n} · ${s.d}`);
+      });
+    }
+
+    // Date stamp element (DOM, not SVG)
+    const dsEl = document.createElement('div');
+    dsEl.id = 'map-date-stamp';
+    dsEl.textContent = '30.10.2021 · 18:18';
+    canvas.appendChild(dsEl);
+    annos['date-stamp'] = dsEl;
+    dsEl.style.opacity = '0';
+
+    // ── IntersectionObserver on .map-step elements ────────────────
+    const steps = document.querySelectorAll('.map-step');
+    let currentStep = -1;
+
+    function setMapStep(n) {
+      if (n === currentStep) return;
+      currentStep = n;
+      if (n === 0) goOverview();
+      else if (n === 1) goBostanci();
+      else if (n === 2) goPattern();
+    }
+
+    if (steps.length > 0) {
+      const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            const n = parseInt(e.target.dataset.step, 10);
+            setMapStep(n);
+          }
+        });
+      }, { threshold: 0.5 });
+      steps.forEach(s => obs.observe(s));
+    } else {
+      // No scrolly steps in DOM — autoplay abbreviated sequence
+      setTimeout(() => goOverview(), 600);
+      setTimeout(() => goBostanci(), 5500);
+      setTimeout(() => goPattern(), 11000);
+      setTimeout(() => {
+        renderActive = false;
+        heroText(null);
+        d3.select(canvas).transition().duration(2500).ease(d3.easeLinear)
+          .style('opacity', 0)
+          .on('end', () => { try { map.remove(); } catch(e){} endCinematic(); });
+        if (titleLayer) {
+          titleLayer.style.transition = 'opacity 2s ease';
+          titleLayer.style.opacity    = '1';
+          titleLayer.style.pointerEvents = 'auto';
+        }
+      }, 21000);
+    }
+
+    // Build annotations after a short delay so map has sized
+    setTimeout(buildAnnotations, 400);
+
+    // Subtle underlay pulse
+    let _pulseUp = true;
+    setInterval(() => {
+      try {
+        const v = _pulseUp ? 0.22 : 0.14;
+        map.setPaintProperty('marmaray-underlay','line-opacity', v);
+        _pulseUp = !_pulseUp;
+      } catch(e) {}
+    }, 2800);
   }
 }
 
