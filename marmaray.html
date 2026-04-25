@@ -632,9 +632,9 @@ body {
 <section class="editorial">
   <div class="kicker">Birinci Perde · İlk Vaka</div>
   <h2>Her şey bir anda oldu</h2>
-  <p class="lead">30 Ekim 2021, soğuk bir Cumartesi akşamı. Bostancı. Saat 18:18. İş çıkış kalabalığında biri daha turnike üzerinden İstanbulkartını geçirdi, perona yürüdü. Treni bekledi.</p>
-  <p>Suadiye'den gelen trenin ışıkları göründüğünde kişi sakin adımlarla sarı çizgiye doğru ilerledi. Tren tam yavaşlamaya başlayacaktı ki rayların üzerine atladı. Marmaray'ın son beş yılında ölümle sonuçlanan ilk intihar buydu. Ama son değildi.</p>
-  <p>Sayılar küçük gibi görünüyor. Ama her yıl ikiye katlanıyorlar.</p>
+  <p class="lead">Soğuk bir sonbahar akşamıydı. 30 Ekim 2021, saat 18:18. Bostancı istasyonu iş çıkış kalabalığıyla doluydu. İşten eve dönen biri, İstanbulkartını turnikeye okuttu, perona yürüdü.</p>
+  <p>Yaklaşık bir dakika sonra tren göründü. Tren tam yavaşlamaya başlarken, peronun ucundaki o kişi rayların üzerine geçti. Marmaray'da kayıtlara geçen ilk ölümlü intiharıydı.</p>
+  <p>Ama son değildi.</p>
 
   <div class="stat-callout">
     <div>
@@ -913,9 +913,9 @@ const C = {
 // ═══════════════════════════════════════════════════════════
 (function dactiloIntro() {
   const LINES = [
-    { el: 'dac-l1', text: 'İstanbul, her sabah yeniden başlıyor.',  delay: 600  },
-    { el: 'dac-l2', text: 'İki yaka, milyonlarca insan, tek bir tren.', delay: 0 },
-    { el: 'dac-l3', text: '30 Ekim 2021. Bostancı. 18:18.',           delay: 0    },
+    { el: 'dac-l1', text: 'Bostancı. 30 Ekim 2021. 18:18.',     delay: 600  },
+    { el: 'dac-l2', text: "Bir kişi Marmaray'a bindi.",          delay: 0    },
+    { el: 'dac-l3', text: 'Ama hiçbir yere varmadı.',            delay: 0    },
   ];
   const CHAR_MS   = 55;
   const LINE_GAP  = 700;
@@ -1278,6 +1278,20 @@ function playHeroMap() {
       }
     });
 
+    // ── 3D buildings (beat 2b street-level) ─────────────────────
+    map.addLayer({
+      id: '3d-buildings', source: 'composite', 'source-layer': 'building',
+      type: 'fill-extrusion', minzoom: 14,
+      paint: {
+        'fill-extrusion-color':   '#d8d2c0',
+        'fill-extrusion-height':  ['interpolate',['linear'],['zoom'], 14,0, 16,['get','height']],
+        'fill-extrusion-base':    ['get','min_height'],
+        'fill-extrusion-opacity': 0,
+        'fill-extrusion-opacity-transition': { duration: 1200, delay: 0 },
+      }
+    }, 'stations-glow');
+    map.setFog({ range: [3, 14], color: '#ede8d5', 'horizon-blend': 0.04 });
+
     // ── Metro context: native Mapbox layer ───────────────────────
     fetch('/media-assets/maps/' + encodeURIComponent('metro hatları.geojson'))
       .then(r => r.ok ? r.json() : null)
@@ -1318,30 +1332,34 @@ function playHeroMap() {
       txt1:700,    metroIn:900,
       // Beat 2: line draws, second text
       lineDraw:2800, txt2:2800, txt2Off:6500,
+      // Beat 2b: 3D street-level dive (Yenikapı)
+      zoom3d:7000, zoom3dDur:4500, zoom3dBack:14700, zoom3dBackDur:1800,
       // Beat 3: Bostancı
-      zoomBo:6800, zBoDur:1300, txt3:7600, pulse3:8400, txt3Off:12000,
+      zoomBo:17000, zBoDur:1300, txt3:17800, pulse3:18600, txt3Off:22200,
       // Beat 4: Yenikapı
-      zoomYk:12300, zYkDur:1100, txt4:13100, pulse4:13600, txt4Off:17100,
+      zoomYk:22500, zYkDur:1100, txt4:23300, pulse4:23800, txt4Off:27300,
       // Beat 5: pull back
-      zoomOut:17300, zOutDur:900, allPulse:18300, txt5:17900, txt5Off:21200,
-      fadeOut:21500,
+      zoomOut:27500, zOutDur:900, allPulse:28500, txt5:28100, txt5Off:31400,
+      fadeOut:31700,
     } : {
       // Beat 1
       txt1:800,    metroIn:1000,
       // Beat 2
       lineDraw:3200, txt2:3200, txt2Off:8500,
+      // Beat 2b: 3D street-level dive (Yenikapı)
+      zoom3d:9000, zoom3dDur:5500, zoom3dBack:17700, zoom3dBackDur:2000,
       // Beat 3
-      zoomBo:8800, zBoDur:1600, txt3:9700, pulse3:10600, txt3Off:14500,
+      zoomBo:20200, zBoDur:1600, txt3:21100, pulse3:22000, txt3Off:25900,
       // Beat 4
-      zoomYk:14900, zYkDur:1400, txt4:15800, pulse4:16400, txt4Off:20700,
+      zoomYk:26200, zYkDur:1400, txt4:27100, pulse4:27700, txt4Off:31900,
       // Beat 5
-      zoomOut:21000, zOutDur:1200, allPulse:22200, txt5:21700, txt5Off:25400,
-      fadeOut:25700,
+      zoomOut:32200, zOutDur:1200, allPulse:33400, txt5:33000, txt5Off:36600,
+      fadeOut:36900,
     };
 
     // Beat 1 — land/sea geography visible, opening context text
     setTimeout(() => heroText(
-      'İki kıtanın arasında, denizin altında ilerleyen bir hat var.'
+      'İstanbul\'un iki yakasını bağlayan Marmaray, 2013\'te açıldı. Günde <strong>2.2 milyon yolcu</strong> taşıyor.'
     ), T.txt1);
     setTimeout(() => {
       try { map.setPaintProperty('metro-context','line-opacity',1); } catch(e) {}
@@ -1349,7 +1367,7 @@ function playHeroMap() {
 
     // Beat 2 — Marmaray line draws west→east, second text
     setTimeout(() => {
-      heroText('On bir yıldır işliyor. Günde <strong>2.2 milyon</strong> yolcu taşıyor. Şehrin damarı.');
+      heroText('209 km ray. 43 istasyon. <strong>Boğaz\'ın altından</strong> geçen tek metro hattı.');
       lineDrawing = true; lineDrawStart = performance.now();
       requestAnimationFrame(tickLine);
       // Stations fade in over same duration as line draw
@@ -1363,13 +1381,31 @@ function playHeroMap() {
     }, T.lineDraw);
     setTimeout(() => heroText(null), T.txt2Off);
 
+    // Beat 2b — 3D street-level dive into Yenikapı
+    setTimeout(() => {
+      try { map.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.85); } catch(e) {}
+      map.flyTo({
+        center: [28.9506, 41.0047], zoom: 16.2, pitch: 74, bearing: BEARING,
+        duration: T.zoom3dDur, essential: true,
+        easing: t => 1 - Math.pow(1 - t, 3),
+      });
+    }, T.zoom3d);
+    setTimeout(() => {
+      try { map.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0); } catch(e) {}
+      map.flyTo({
+        center: MAP_CENTER, zoom: ZOOM_INIT, pitch: PITCH_INIT, bearing: BEARING,
+        duration: T.zoom3dBackDur, essential: true,
+        easing: t => t * (2 - t),
+      });
+    }, T.zoom3dBack);
+
     // Beat 3 — zoom Bostancı
     setTimeout(() => map.flyTo({
       center:[29.0969,40.9629], zoom:ZOOM_CLOSE, pitch:45, bearing:BEARING,
       duration:T.zBoDur, essential:true
     }), T.zoomBo);
     setTimeout(() => heroText(
-      '<strong>30 Ekim 2021, bir Cumartesi akşamı.</strong> 18:18. Bostancı\'da bir yolcu, yaklaşan trenin önüne atladı. Marmaray\'da ölümle sonuçlanan ilk intihar.'
+      '<strong>30 Ekim 2021, 18:18.</strong> Bostancı istasyonu. Bir kişi raylara atladı. Ölümle sonuçlanan ilk intihar.'
     ), T.txt3);
     setTimeout(() => addPulse(29.0969, 40.9629), T.pulse3);
     setTimeout(() => heroText(null), T.txt3Off);
@@ -1380,7 +1416,7 @@ function playHeroMap() {
       duration:T.zYkDur, essential:true
     }), T.zoomYk);
     setTimeout(() => heroText(
-      'Sonra Yenikapı. Şehrin en kalabalık aktarma noktası — metro, vapur, otobüs. Dört yıl içinde, <strong>peronlarda altı kişi</strong> hayatını kaybetti.'
+      'Yenikapı. İstanbul\'un en işlek aktarma noktası. Dört yılda <strong>6 can kaybı</strong> yaşandı.'
     ), T.txt4);
     setTimeout(() => {
       for (let k = 0; k < 6; k++) setTimeout(() => addPulse(28.9506,41.0047), k * 300);
@@ -1394,7 +1430,7 @@ function playHeroMap() {
     }), T.zoomOut);
     setTimeout(() => HS.filter(s => s.d > 0).forEach(s => addPulse(s.lon, s.lat)), T.allPulse);
     setTimeout(() => heroText(
-      '<strong>Dört yıl. Yirmi dokuz olay. Yirmi ölüm.</strong> Ve eğri, dik bir yokuş gibi yukarı çıkıyor.'
+      '<strong>29 olay. 20 ölüm.</strong> Dört yılda. Ve sayı her yıl artıyor.'
     ), T.txt5);
     setTimeout(() => heroText(null), T.txt5Off);
 
