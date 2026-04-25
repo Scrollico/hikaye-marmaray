@@ -268,39 +268,62 @@ body {
   display: inline-block;
 }
 
-/* ── Map date stamp ── */
+/* ── Map date stamp (top-left) ── */
 #map-date-stamp {
   position: absolute;
   top: 18px;
   left: 18px;
   z-index: 12;
   font-family: 'Courier Prime', monospace;
-  font-size: clamp(10px, 1.5vw, 13px);
+  font-size: clamp(10px, 1.4vw, 12px);
   color: #374152;
-  background: rgba(248,245,228,0.85);
-  border: 1px solid rgba(55,65,82,0.12);
+  background: rgba(248,245,228,0.88);
+  border: 1px solid rgba(55,65,82,0.10);
   padding: 3px 8px;
   border-radius: 3px;
   letter-spacing: 0.04em;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+/* ── Year ticker (top-right) ── */
+#map-year-ticker {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 12;
+  font-family: 'Courier Prime', monospace;
+  font-size: clamp(11px, 1.8vw, 15px);
+  font-weight: 700;
+  color: #8080FF;
+  background: rgba(248,245,228,0.88);
+  border: 1px solid rgba(128,128,255,0.18);
+  padding: 3px 10px;
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+  transition: opacity 0.4s ease;
   pointer-events: none;
 }
 #hero-text {
   position: absolute;
-  bottom: 13%;
+  bottom: 12%;
   left: 50%;
-  width: min(520px, 86vw);
+  width: min(540px, 88vw);
   text-align: center;
   font-family: 'DM Sans', sans-serif;
-  font-size: clamp(18px, 2.4vw, 30px);
-  line-height: 1.65;
+  font-size: clamp(16px, 2.2vw, 26px);
+  line-height: 1.6;
   color: var(--charcoal);
   opacity: 0;
-  transform: translateX(-50%) translateY(12px);
-  transition: opacity 0.65s ease, transform 0.65s ease;
+  transform: translateX(-50%) translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
   pointer-events: none;
   z-index: 10;
-  text-shadow: 0 2px 14px rgba(240,235,220,0.97), 0 0 32px rgba(240,235,220,0.85);
+  background: rgba(248,245,228,0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 6px;
+  padding: 14px 20px;
 }
 #hero-text.visible {
   opacity: 1;
@@ -308,7 +331,12 @@ body {
 }
 #hero-text strong { font-weight: 700; color: #2a2320; }
 @media (max-width: 640px) {
-  #hero-text { font-size: clamp(17px, 4.6vw, 22px); bottom: 7%; width: min(360px, 90vw); }
+  #hero-text {
+    font-size: clamp(14px, 4.2vw, 19px);
+    bottom: 6%;
+    width: min(360px, 92vw);
+    padding: 11px 15px;
+  }
 }
 
 /* ════════════════════════════════════════
@@ -1113,7 +1141,7 @@ function playHeroMap() {
   let mapReady     = false;
   let lineDrawing  = false;
   let lineDrawStart= 0;
-  const LINE_DUR   = isMob ? 3000 : 4200;
+  const LINE_DUR   = 3000;
   let lineRawProg  = 0;
   const pulseRings = [];
   let renderActive = true;
@@ -1129,15 +1157,17 @@ function playHeroMap() {
     try { const p = _map.project([lon,lat]); return [p.x, p.y]; } catch(e) { return null; }
   }
 
-  // ── Hero text: fade-up via CSS class ─────────────────
+  // ── Hero text: fade-up enter (500ms), opacity-only exit (300ms) ─
   function heroText(html) {
     if (!heroTxt) return;
     if (html) {
+      heroTxt.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
       heroTxt.innerHTML = html;
       heroTxt.classList.remove('visible');
       void heroTxt.offsetWidth;
       heroTxt.classList.add('visible');
     } else {
+      heroTxt.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
       heroTxt.classList.remove('visible');
     }
   }
@@ -1378,182 +1408,25 @@ function playHeroMap() {
   // Failsafe — start anyway if tiles stall
   setTimeout(() => { if (!mapReady) { mapReady = true; map.triggerRepaint(); startCinematic(); } }, 8000);
 
-  // ── Scroll-driven 3-step hero map ────────────────────────────
+  // ── 5-act autoplay cinematic ──────────────────────────────────
   function startCinematic() {
-    // Step 0: intro context — draw line, show metro, opening text
-    function goOverview() {
-      map.flyTo({
-        center: MAP_CENTER, zoom: ZOOM_INIT, pitch: PITCH_INIT, bearing: BEARING,
-        duration: 2400, essential: true,
-        easing: t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2,
-      });
-      heroText('İstanbul\'un iki yakasını bağlayan Marmaray, 2013\'te açıldı. 209 km ray. <strong>Boğaz\'ın altından</strong> geçen tek metro hattı.');
-      try { map.setPaintProperty('metro-context','line-opacity',1); } catch(e) {}
-      if (!lineDrawing && lineRawProg === 0) {
-        lineDrawing = true; lineDrawStart = performance.now();
-        requestAnimationFrame(tickLine);
-      }
-      try { map.setPaintProperty('marmaray-underlay', 'line-opacity', 0.18); } catch(e) {}
-      try {
-        map.setPaintProperty('stations-dot','circle-opacity',['case',['>', ['get','incidents'],0], 0.9, 0.38]);
-        map.setPaintProperty('stations-dot','circle-stroke-opacity',['case',['>', ['get','incidents'],0], 0, 0.45]);
-        map.setPaintProperty('stations-glow','circle-opacity', 0.22);
-      } catch(e) {}
-      // Marmaray label
-      showAnnotation('marmaray-label', true);
-      showAnnotation('geo-labels', true);
-      showAnnotation('date-stamp', false);
-    }
+    const ease = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; // easeInOutCubic
 
-    // Step 1: first incident — Bostancı
-    function goBostanci() {
-      map.flyTo({
-        center:[29.0969, 40.9629], zoom: ZOOM_CLOSE, pitch: 45, bearing: BEARING,
-        duration: 2400, essential: true,
-        easing: t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2,
-      });
-      heroText('<strong>30 Ekim 2021, 18:18.</strong> Bostancı istasyonu. Bir kişi raylara atladı. Ölümle sonuçlanan ilk intihar.');
-      setTimeout(() => addPulse(29.0969, 40.9629), 800);
-      showAnnotation('date-stamp', true);
-      showAnnotation('station-label-bostanci', true);
-    }
-
-    // Step 2: pattern — Yenikapı worst station, pull back for all
-    function goPattern() {
-      map.flyTo({
-        center:[28.9506, 41.0047], zoom: ZOOM_CLOSE, pitch: 45, bearing: BEARING,
-        duration: 2400, essential: true,
-        easing: t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2,
-      });
-      heroText('Yenikapı. İstanbul\'un en işlek aktarma noktası. Dört yılda <strong>6 can kaybı</strong>.');
-      for (let k = 0; k < 6; k++) setTimeout(() => addPulse(28.9506, 41.0047), k * 300 + 600);
-      showAnnotation('date-stamp', false);
-      showAnnotation('station-label-bostanci', false);
-      showAnnotation('station-label-yenikapi', true);
-      // After 3s pull back and show all
-      setTimeout(() => {
-        map.flyTo({
-          center: MAP_CENTER, zoom: ZOOM_INIT, pitch: PITCH_INIT, bearing: BEARING,
-          duration: 2400, essential: true,
-          easing: t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2,
-        });
-        heroText('<strong>29 olay. 20 ölüm.</strong> Dört yılda. Ve sayı her yıl artıyor.');
-        setTimeout(() => HS.filter(s => s.d > 0).forEach(s => addPulse(s.lon, s.lat)), 1200);
-        showAnnotation('station-label-yenikapi', false);
-        showAnnotation('top-station-labels', true);
-      }, 3000);
-    }
-
-    // ── Annotation helpers ────────────────────────────────────────
-    const annos = {};
-
-    function showAnnotation(id, visible) {
-      if (annos[id]) annos[id].style.opacity = visible ? '1' : '0';
-    }
-
-    // ── Build SVG annotations ─────────────────────────────────────
-    function buildAnnotations() {
-      const svgNode = svgEl;
-      const w = svgNode.clientWidth  || 800;
-      const h = svgNode.clientHeight || 440;
-
-      // Geographic anchors (faint text)
-      const geoG = svg.append('g').attr('id','geo-labels-g')
-        .style('opacity','0').style('transition','opacity 1s ease');
-      annos['geo-labels'] = geoG.node();
-      const geoLabels = [
-        { text:'Avrupa Yakası', lon:28.82, lat:41.03 },
-        { text:'Anadolu Yakası', lon:29.15, lat:40.97 },
-        { text:'Marmara Denizi', lon:28.95, lat:40.90 },
-      ];
-      geoLabels.forEach(gl => {
-        const pt = project(gl.lon, gl.lat);
-        if (!pt) return;
-        geoG.append('text').attr('x', pt[0]).attr('y', pt[1])
-          .attr('text-anchor','middle')
-          .attr('font-size', isMob ? '8px' : '10px')
-          .attr('font-family','DM Sans,sans-serif')
-          .attr('fill','#8a7d6b').attr('opacity','0.55')
-          .attr('letter-spacing','0.08em')
-          .text(gl.text.toUpperCase());
-      });
-
-      // Marmaray line label — italic, midpoint
-      const midS = HS[Math.floor(HS.length/2)];
-      const midPt = project(midS.lon, midS.lat);
-      const mlG = svg.append('g').attr('id','marmaray-label-g')
-        .style('opacity','0').style('transition','opacity 0.8s ease');
-      annos['marmaray-label'] = mlG.node();
-      if (midPt) {
-        mlG.append('text').attr('x', midPt[0]).attr('y', midPt[1] - 10)
-          .attr('text-anchor','middle')
-          .attr('font-size', isMob ? '9px' : '11px')
-          .attr('font-family','Source Serif 4,serif')
-          .attr('font-style','italic').attr('fill','#8080FF').attr('opacity','0.8')
-          .text('Marmaray');
-      }
-
-      // Station label: Bostancı
-      const boS = HS.find(s => s.n === 'Bostancı');
-      if (boS) {
-        const pt = project(boS.lon, boS.lat);
-        const slG = svg.append('g').attr('id','station-label-bostanci-g')
-          .style('opacity','0').style('transition','opacity 0.6s ease');
-        annos['station-label-bostanci'] = slG.node();
-        if (pt) {
-          const lx = pt[0] + (isMob ? 14 : 16), ly = pt[1] - 6;
-          slG.append('line').attr('x1',pt[0]+5).attr('y1',pt[1]-2).attr('x2',lx-2).attr('y2',ly)
-            .attr('stroke','#374152').attr('stroke-width','0.8').attr('opacity','0.6');
-          slG.append('text').attr('x',lx).attr('y',ly)
-            .attr('font-size', isMob?'9px':'11px').attr('font-family','DM Sans,sans-serif')
-            .attr('fill','#374152').text('Bostancı');
-        }
-      }
-
-      // Station label: Yenikapı
-      const ykS = HS.find(s => s.n === 'Yenikapı');
-      if (ykS) {
-        const pt = project(ykS.lon, ykS.lat);
-        const slG = svg.append('g').attr('id','station-label-yenikapi-g')
-          .style('opacity','0').style('transition','opacity 0.6s ease');
-        annos['station-label-yenikapi'] = slG.node();
-        if (pt) {
-          const lx = pt[0] + (isMob ? 14 : 16), ly = pt[1] - 6;
-          slG.append('line').attr('x1',pt[0]+5).attr('y1',pt[1]-2).attr('x2',lx-2).attr('y2',ly)
-            .attr('stroke','#8080FF').attr('stroke-width','0.8').attr('opacity','0.6');
-          slG.append('text').attr('x',lx).attr('y',ly)
-            .attr('font-size', isMob?'9px':'11px').attr('font-family','DM Sans,sans-serif')
-            .attr('fill','#8080FF').text('Yenikapı · 6 vaka');
-        }
-      }
-
-      // Top station labels (shown in step 2 overview)
-      const topStations = HS.filter(s => s.d >= 2);
-      const tsG = svg.append('g').attr('id','top-station-labels-g')
-        .style('opacity','0').style('transition','opacity 0.8s ease');
-      annos['top-station-labels'] = tsG.node();
-      topStations.forEach(s => {
-        const pt = project(s.lon, s.lat);
-        if (!pt) return;
-        const lx = pt[0] + (isMob ? 12 : 14), ly = pt[1] - 5;
-        tsG.append('line').attr('x1',pt[0]+4).attr('y1',pt[1]-2).attr('x2',lx-2).attr('y2',ly)
-          .attr('stroke','#8080FF').attr('stroke-width','0.7').attr('opacity','0.5');
-        tsG.append('text').attr('x',lx).attr('y',ly)
-          .attr('font-size', isMob?'8px':'10px').attr('font-family','DM Sans,sans-serif')
-          .attr('fill','#374152')
-          .text(`${s.n} · ${s.d}`);
-      });
-    }
-
-    // Date stamp element (DOM, not SVG)
+    // ── DOM caption elements ──────────────────────────────────────
+    // Date stamp — top-left
     const dsEl = document.createElement('div');
     dsEl.id = 'map-date-stamp';
-    dsEl.textContent = '30.10.2021 · 18:18';
-    canvas.appendChild(dsEl);
-    annos['date-stamp'] = dsEl;
+    dsEl.textContent = '30 Ekim 2021';
     dsEl.style.opacity = '0';
+    canvas.appendChild(dsEl);
 
-    // Legend DOM element — absolutely pinned inside map container
+    // Year ticker — top-right
+    const yrEl = document.createElement('div');
+    yrEl.id = 'map-year-ticker';
+    yrEl.style.opacity = '0';
+    canvas.appendChild(yrEl);
+
+    // Legend — pinned bottom-right (always visible once map starts)
     const lgEl = document.createElement('div');
     lgEl.id = 'map-legend';
     lgEl.innerHTML = `
@@ -1563,26 +1436,219 @@ function playHeroMap() {
     `;
     canvas.appendChild(lgEl);
 
-    // ── Autoplay triggered when canvas enters viewport ────────────
+    // ── SVG annotation groups ─────────────────────────────────────
+    const annos = {};
+    function showAnno(id, visible) {
+      if (annos[id]) annos[id].style.opacity = visible ? '1' : '0';
+    }
+
+    // Cumulative rings group (Act 3 persistent circles)
+    const cumRingG = svg.append('g').attr('id','cum-rings');
+
+    function buildAnnotations() {
+      // Station label helper
+      function makeStationLabel(id, s, color, labelLines) {
+        const pt = project(s.lon, s.lat);
+        const g = svg.append('g').style('opacity','0').style('transition','opacity 0.6s ease');
+        annos[id] = g.node();
+        if (!pt) return;
+        const ox = isMob ? 14 : 18, oy = -8;
+        const lx = pt[0] + ox, ly = pt[1] + oy;
+        g.append('line')
+          .attr('x1', pt[0]+5).attr('y1', pt[1]-3)
+          .attr('x2', lx-3).attr('y2', ly+4)
+          .attr('stroke', color).attr('stroke-width','0.8').attr('opacity','0.55');
+        labelLines.forEach((line, i) => {
+          g.append('text')
+            .attr('x', lx).attr('y', ly + i * (isMob ? 13 : 14))
+            .attr('font-family','DM Sans,sans-serif')
+            .attr('font-size', i === 0 ? (isMob?'10px':'12px') : (isMob?'9px':'10px'))
+            .attr('font-weight', i === 0 ? '600' : '400')
+            .attr('fill', i === 0 ? '#374152' : color)
+            .text(line);
+        });
+      }
+
+      const boS = HS.find(s => s.n === 'Bostancı');
+      const ykS = HS.find(s => s.n === 'Yenikapı');
+      if (boS) makeStationLabel('label-bostanci', boS, '#8080FF', ['Bostancı', '3 can kaybı']);
+      if (ykS) makeStationLabel('label-yenikapi', ykS, '#8080FF', ['Yenikapı', '6 can kaybı']);
+    }
+
+    // Act 3 — year-by-year wave stations (progressive reveal)
+    const WAVES = [
+      // 2021: first incident location
+      [{ lon:29.0969, lat:40.9629 }],
+      // 2022: +2 new (3 cumulative)
+      [{ lon:28.8695, lat:40.9781 }, { lon:29.0106, lat:41.0235 }],
+      // 2023: +4 new (7 cumulative)
+      [{ lon:28.9506, lat:41.0047 }, { lon:29.0307, lat:41.0183 },
+       { lon:29.1235, lat:40.9487 }, { lon:28.8402, lat:40.9822 }],
+      // 2024: +2 more prominent (13 cumulative)
+      [{ lon:28.9506, lat:41.0047 }, { lon:29.0969, lat:40.9629 }],
+    ];
+    const WAVE_YEARS = ['2021', '2022', '2023', '2024'];
+
+    function showWave(wi) {
+      yrEl.textContent = WAVE_YEARS[wi];
+      yrEl.style.opacity = '1';
+      // Dim previous circles
+      cumRingG.selectAll('circle')
+        .transition().duration(300)
+        .attr('opacity', 0.28).attr('stroke-width', 1);
+      // Add new circles + brief pulse
+      WAVES[wi].forEach(s => {
+        const pt = project(s.lon, s.lat);
+        if (pt) {
+          cumRingG.append('circle')
+            .attr('cx', pt[0]).attr('cy', pt[1])
+            .attr('r', 3).attr('fill','none')
+            .attr('stroke','#8080FF').attr('stroke-width', 2)
+            .attr('opacity', 0)
+            .transition().duration(600)
+              .attr('r', isMob ? 14 : 12).attr('opacity', 0.72);
+        }
+        addPulse(s.lon, s.lat);
+      });
+    }
+
+    // ── Autoplay: fires once when canvas enters viewport ──────────
     let _played = false;
     function runAutoplay() {
       if (_played) return;
       _played = true;
-      // Build annotations right away
       buildAnnotations();
-      // Beat 0 — overview
-      setTimeout(() => goOverview(), 600);
-      // Beat 1 — Bostancı
-      const T = isMob ? { bo: 5500, pat: 11000, fin: 20000 }
-                      : { bo: 6000, pat: 12000, fin: 22000 };
-      setTimeout(() => goBostanci(), T.bo);
-      // Beat 2 — Yenikapı + pattern
-      setTimeout(() => goPattern(), T.pat);
-      // Finale
+
+      // ── ACT 1: EXPOSITION  t=0–7s ────────────────────────────
+      // t=0: first overlay, line still hidden
+      heroText('İstanbul. İki yaka, on dört milyon insan.');
+
+      // t=0–1.5: camera — slight zoom in (1500ms)
+      map.flyTo({
+        center: MAP_CENTER, zoom: ZOOM_INIT + 0.5, pitch: PITCH_INIT, bearing: BEARING,
+        duration: 1500, essential: true, easing: ease,
+      });
+
+      // t=1500: clear overlay
+      setTimeout(() => heroText(null), 1500);
+
+      // t=3000: "Marmaray" overlay + line draw + metro + stations
+      setTimeout(() => {
+        heroText('Marmaray, Boğaz\'ın altından geçen tek metro hattı.');
+        try { map.setPaintProperty('metro-context','line-opacity', 0.7); } catch(e) {}
+        try { map.setPaintProperty('marmaray-underlay','line-opacity', 0.18); } catch(e) {}
+        lineDrawing = true; lineDrawStart = performance.now();
+        requestAnimationFrame(tickLine);
+        try {
+          map.setPaintProperty('stations-dot','circle-opacity',
+            ['case',['>', ['get','incidents'],0], 0.9, 0.38]);
+          map.setPaintProperty('stations-dot','circle-stroke-opacity',
+            ['case',['>', ['get','incidents'],0], 0, 0.45]);
+          map.setPaintProperty('stations-glow','circle-opacity', 0.22);
+        } catch(e) {}
+      }, 3000);
+
+      // t=5000: third overlay
+      setTimeout(() => heroText('On bir yıl. Günde <strong>2.2 milyon yolcu</strong>.'), 5000);
+
+      // t=7000: clear, Act 1 end
+      setTimeout(() => heroText(null), 7000);
+
+      // ── ACT 2: INCITING INCIDENT  t=7–12s ────────────────────
+      // t=7000: flyTo Bostancı (2s)
+      setTimeout(() => {
+        map.flyTo({
+          center:[29.0969, 40.9629], zoom: 14.5, pitch: 65, bearing: BEARING,
+          duration: 2000, essential: true, easing: ease,
+        });
+      }, 7000);
+
+      // t=9000: date stamp + single pulse + label
+      setTimeout(() => {
+        dsEl.style.transition = 'opacity 0.4s ease';
+        dsEl.style.opacity = '1';
+        addPulse(29.0969, 40.9629);
+        showAnno('label-bostanci', true);
+      }, 9000);
+
+      // t=10000: overlay
+      setTimeout(() => heroText('Marmaray\'da ölümle sonuçlanan ilk intihar.'), 10000);
+
+      // t=12000: clear Act 2
+      setTimeout(() => {
+        heroText(null);
+        dsEl.style.opacity = '0';
+        showAnno('label-bostanci', false);
+      }, 12000);
+
+      // ── ACT 3: RISING ACTION  t=12–18.8s ─────────────────────
+      // t=12000: flyTo overview (2s)
+      setTimeout(() => {
+        map.flyTo({
+          center: MAP_CENTER, zoom: ZOOM_INIT, pitch: PITCH_INIT, bearing: BEARING,
+          duration: 2000, essential: true, easing: ease,
+        });
+      }, 12000);
+
+      // t=14000: overlay + year ticker, then 4 waves at 1.2s intervals
+      setTimeout(() => {
+        heroText('Sonra her yıl daha fazla. İki. Üç. Yedi. On üç.');
+        yrEl.style.transition = 'opacity 0.4s ease';
+      }, 14000);
+      [0,1,2,3].forEach(wi => setTimeout(() => showWave(wi), 14000 + wi * 1200));
+
+      // t=18800: hide ticker + overlay
+      setTimeout(() => {
+        yrEl.style.opacity = '0';
+        heroText(null);
+      }, 18800);
+
+      // ── ACT 4: CLIMAX  t=18–24s ──────────────────────────────
+      // t=18000: flyTo Yenikapı (2s)
+      setTimeout(() => {
+        map.flyTo({
+          center:[28.9506, 41.0047], zoom: 15.2, pitch: 60, bearing: BEARING,
+          duration: 2000, essential: true, easing: ease,
+        });
+      }, 18000);
+
+      // t=20000: 6 sequential pulses at 0.4s intervals
+      for (let k = 0; k < 6; k++) {
+        setTimeout(() => addPulse(28.9506, 41.0047), 20000 + k * 400);
+      }
+
+      // t=20000: Yenikapı label
+      setTimeout(() => showAnno('label-yenikapi', true), 20000);
+
+      // t=22000: overlay
+      setTimeout(() => heroText('Yenikapı. En kalabalık aktarma noktası. Dört yıl, <strong>altı kişi</strong>.'), 22000);
+
+      // t=24000: clear Act 4
+      setTimeout(() => {
+        heroText(null);
+        showAnno('label-yenikapi', false);
+      }, 24000);
+
+      // ── ACT 5: FALLING ACTION  t=24–29.5s ────────────────────
+      // t=24000: flyTo full Istanbul pull-back (2s)
+      setTimeout(() => {
+        map.flyTo({
+          center: MAP_CENTER, zoom: ZOOM_INIT, pitch: PITCH_INIT, bearing: BEARING,
+          duration: 2000, essential: true, easing: ease,
+        });
+      }, 24000);
+
+      // t=26000: all incident rings pulse in unison + final overlay
+      setTimeout(() => {
+        HS.filter(s => s.d > 0).forEach(s => addPulse(s.lon, s.lat));
+        heroText('Dört yıl. <strong>29 olay. 20 ölüm.</strong> Ve eğri yukarı çıkmaya devam ediyor.');
+      }, 26000);
+
+      // t=28000: fade map to beige, title fades in
       setTimeout(() => {
         renderActive = false;
         heroText(null);
-        d3.select(canvas).transition().duration(2500).ease(d3.easeLinear)
+        d3.select(canvas).transition().duration(1500).ease(d3.easeLinear)
           .style('opacity', 0)
           .on('end', () => { try { map.remove(); } catch(e){} endCinematic(); });
         if (titleLayer) {
@@ -1590,15 +1656,16 @@ function playHeroMap() {
           titleLayer.style.opacity    = '1';
           titleLayer.style.pointerEvents = 'auto';
         }
-      }, T.fin);
+      }, 28000);
     }
 
+    // Fire once on viewport entry, never again
     const vpObs = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting) { runAutoplay(); vpObs.disconnect(); }
     }, { threshold: 0.15 });
     vpObs.observe(canvas);
 
-    // Subtle underlay pulse
+    // Subtle underlay pulse after line draw completes
     let _pulseUp = true;
     setInterval(() => {
       try {
