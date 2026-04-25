@@ -632,9 +632,9 @@ body {
 <section class="editorial">
   <div class="kicker">Birinci Perde · İlk Vaka</div>
   <h2>Her şey bir anda oldu</h2>
-  <p class="lead">Soğuk bir sonbahar akşamıydı. 30 Ekim 2021, saat 18:18. Bostancı İstasyonu'ndaki kalabalık, günün yorgunluğunu üzerinde taşıyan yolcularla doluydu. İşten eve dönen biri, İstanbulkart'ını turnike üzerinden geçirdi, perona yürüdü.</p>
-  <p>Yaklaşık bir dakika sonra tren göründü. Hız kesmeden önce, peronun ucundaki o kişi rayların üzerine geçti. Marmaray hattında son beş yılın ilk ölümlü intiharıydı bu.</p>
-  <p>Ama son değildi.</p>
+  <p class="lead">30 Ekim 2021, soğuk bir Cumartesi akşamı. Bostancı. Saat 18:18. İş çıkış kalabalığında biri daha turnike üzerinden İstanbulkartını geçirdi, perona yürüdü. Treni bekledi.</p>
+  <p>Suadiye'den gelen trenin ışıkları göründüğünde kişi sakin adımlarla sarı çizgiye doğru ilerledi. Tren tam yavaşlamaya başlayacaktı ki rayların üzerine atladı. Marmaray'ın son beş yılında ölümle sonuçlanan ilk intihar buydu. Ama son değildi.</p>
+  <p>Sayılar küçük gibi görünüyor. Ama her yıl ikiye katlanıyorlar.</p>
 
   <div class="stat-callout">
     <div>
@@ -913,9 +913,9 @@ const C = {
 // ═══════════════════════════════════════════════════════════
 (function dactiloIntro() {
   const LINES = [
-    { el: 'dac-l1', text: 'Bostancı. 30 Ekim 2021. 18:18.',     delay: 600  },
-    { el: 'dac-l2', text: "Bir kişi Marmaray'a bindi.",          delay: 0    },
-    { el: 'dac-l3', text: 'Ama hiçbir yere varmadı.',            delay: 0    },
+    { el: 'dac-l1', text: 'İstanbul, her sabah yeniden başlıyor.',  delay: 600  },
+    { el: 'dac-l2', text: 'İki yaka, milyonlarca insan, tek bir tren.', delay: 0 },
+    { el: 'dac-l3', text: '30 Ekim 2021. Bostancı. 18:18.',           delay: 0    },
   ];
   const CHAR_MS   = 55;
   const LINE_GAP  = 700;
@@ -1341,7 +1341,7 @@ function playHeroMap() {
 
     // Beat 1 — land/sea geography visible, opening context text
     setTimeout(() => heroText(
-      'İstanbul\'un iki yakasını bağlayan Marmaray, 2013\'te açıldı. Günde <strong>2.2 milyon kişi</strong> taşıyor.'
+      'İki kıtanın arasında, denizin altında ilerleyen bir hat var.'
     ), T.txt1);
     setTimeout(() => {
       try { map.setPaintProperty('metro-context','line-opacity',1); } catch(e) {}
@@ -1349,7 +1349,7 @@ function playHeroMap() {
 
     // Beat 2 — Marmaray line draws west→east, second text
     setTimeout(() => {
-      heroText('209 km ray. 43 istasyon. <strong>Boğaz\'ın altından</strong> geçen tek metro hattı.');
+      heroText('On bir yıldır işliyor. Günde <strong>2.2 milyon</strong> yolcu taşıyor. Şehrin damarı.');
       lineDrawing = true; lineDrawStart = performance.now();
       requestAnimationFrame(tickLine);
       // Stations fade in over same duration as line draw
@@ -1369,7 +1369,7 @@ function playHeroMap() {
       duration:T.zBoDur, essential:true
     }), T.zoomBo);
     setTimeout(() => heroText(
-      '<strong>30 Ekim 2021, 18:18.</strong> Bostancı istasyonu. Bir kişi raylara atladı. Marmaray\'daki ilk ölümlü intihardı.'
+      '<strong>30 Ekim 2021, bir Cumartesi akşamı.</strong> 18:18. Bostancı\'da bir yolcu, yaklaşan trenin önüne atladı. Marmaray\'da ölümle sonuçlanan ilk intihar.'
     ), T.txt3);
     setTimeout(() => addPulse(29.0969, 40.9629), T.pulse3);
     setTimeout(() => heroText(null), T.txt3Off);
@@ -1380,7 +1380,7 @@ function playHeroMap() {
       duration:T.zYkDur, essential:true
     }), T.zoomYk);
     setTimeout(() => heroText(
-      'Yenikapı. İstanbul\'un en işlek aktarma noktası. Dört yılda <strong>6 can kaybı</strong> yaşandı.'
+      'Sonra Yenikapı. Şehrin en kalabalık aktarma noktası — metro, vapur, otobüs. Dört yıl içinde, <strong>peronlarda altı kişi</strong> hayatını kaybetti.'
     ), T.txt4);
     setTimeout(() => {
       for (let k = 0; k < 6; k++) setTimeout(() => addPulse(28.9506,41.0047), k * 300);
@@ -1394,7 +1394,7 @@ function playHeroMap() {
     }), T.zoomOut);
     setTimeout(() => HS.filter(s => s.d > 0).forEach(s => addPulse(s.lon, s.lat)), T.allPulse);
     setTimeout(() => heroText(
-      '<strong>29 olay. 20 ölüm.</strong> Dört yılda. Ve sayı her yıl artıyor.'
+      '<strong>Dört yıl. Yirmi dokuz olay. Yirmi ölüm.</strong> Ve eğri, dik bir yokuş gibi yukarı çıkıyor.'
     ), T.txt5);
     setTimeout(() => heroText(null), T.txt5Off);
 
