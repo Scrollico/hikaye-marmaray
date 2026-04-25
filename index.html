@@ -233,15 +233,39 @@ body {
 .mapboxgl-ctrl-logo,
 .mapboxgl-ctrl-attrib { display: none !important; }
 
-/* ── Hero scrolly sentinel divs ── */
-#hero-scrolly {
-  position: relative;
-  z-index: 5;
+/* ── Map legend (DOM, pinned inside map container) ── */
+#map-legend {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 210;
+  background: rgba(248,245,228,0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 6px;
+  padding: 10px 12px;
+  border: 1px solid rgba(42,35,32,0.08);
   pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
-.map-step {
-  height: 100vh;
-  pointer-events: none;
+@media (max-width: 639px) {
+  #map-legend { right: auto; left: 16px; bottom: 16px; }
+}
+.map-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: #374152;
+  white-space: nowrap;
+}
+.map-legend-dot {
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
 }
 
 /* ── Map date stamp ── */
@@ -643,13 +667,6 @@ body {
 <div id="hero-map-canvas">
   <svg id="hero-map-svg" viewBox="0 0 800 440" preserveAspectRatio="xMidYMid meet"></svg>
   <div id="hero-text"></div>
-</div>
-
-<!-- ════════════════════ HERO SCROLLY STEPS ════════════════════ -->
-<div id="hero-scrolly">
-  <div class="map-step" data-step="0"></div>
-  <div class="map-step" data-step="1"></div>
-  <div class="map-step" data-step="2"></div>
 </div>
 
 <!-- ════════════════════ SHARED VIZ PANEL ════════════════════ -->
@@ -1385,7 +1402,6 @@ function playHeroMap() {
       // Marmaray label
       showAnnotation('marmaray-label', true);
       showAnnotation('geo-labels', true);
-      showAnnotation('legend', true);
       showAnnotation('date-stamp', false);
     }
 
@@ -1440,26 +1456,6 @@ function playHeroMap() {
       const svgNode = svgEl;
       const w = svgNode.clientWidth  || 800;
       const h = svgNode.clientHeight || 440;
-
-      // Legend — bottom-right
-      const lg = svg.append('g').attr('id','legend-g')
-        .attr('transform', `translate(${w - (isMob?120:140)},${h - (isMob?72:80)})`)
-        .style('opacity','0').style('transition','opacity 0.8s ease');
-      annos['legend'] = lg.node();
-      const legendData = [
-        { color:'#8080FF', r:8, label:'6 vaka' },
-        { color:'#8080FF', r:5, label:'3 vaka' },
-        { color:'#374152', r:2.5, label:'Diğer istasyonlar' },
-      ];
-      lg.append('rect').attr('x',-8).attr('y',-14).attr('width', isMob?116:132).attr('height',isMob?68:76)
-        .attr('rx',4).attr('fill','rgba(248,245,228,0.9)').attr('stroke','rgba(55,65,82,0.12)').attr('stroke-width',1);
-      legendData.forEach((d, i) => {
-        const y = i * (isMob ? 20 : 22) + 6;
-        lg.append('circle').attr('cx',8).attr('cy',y).attr('r',d.r).attr('fill',d.color).attr('opacity',0.85);
-        lg.append('text').attr('x',20).attr('y',y+4)
-          .attr('font-size', isMob?'9px':'10px').attr('font-family','DM Sans,sans-serif')
-          .attr('fill','#374152').text(d.label);
-      });
 
       // Geographic anchors (faint text)
       const geoG = svg.append('g').attr('id','geo-labels-g')
@@ -1557,33 +1553,32 @@ function playHeroMap() {
     annos['date-stamp'] = dsEl;
     dsEl.style.opacity = '0';
 
-    // ── IntersectionObserver on .map-step elements ────────────────
-    const steps = document.querySelectorAll('.map-step');
-    let currentStep = -1;
+    // Legend DOM element — absolutely pinned inside map container
+    const lgEl = document.createElement('div');
+    lgEl.id = 'map-legend';
+    lgEl.innerHTML = `
+      <div class="map-legend-row"><span class="map-legend-dot" style="width:16px;height:16px;background:#8080FF;opacity:0.85;"></span><span>6 vaka</span></div>
+      <div class="map-legend-row"><span class="map-legend-dot" style="width:10px;height:10px;background:#8080FF;opacity:0.85;"></span><span>2–3 vaka</span></div>
+      <div class="map-legend-row"><span class="map-legend-dot" style="width:5px;height:5px;background:#374152;opacity:0.7;"></span><span>Diğer istasyonlar</span></div>
+    `;
+    canvas.appendChild(lgEl);
 
-    function setMapStep(n) {
-      if (n === currentStep) return;
-      currentStep = n;
-      if (n === 0) goOverview();
-      else if (n === 1) goBostanci();
-      else if (n === 2) goPattern();
-    }
-
-    if (steps.length > 0) {
-      const obs = new IntersectionObserver(entries => {
-        entries.forEach(e => {
-          if (e.isIntersecting) {
-            const n = parseInt(e.target.dataset.step, 10);
-            setMapStep(n);
-          }
-        });
-      }, { threshold: 0.5 });
-      steps.forEach(s => obs.observe(s));
-    } else {
-      // No scrolly steps in DOM — autoplay abbreviated sequence
+    // ── Autoplay triggered when canvas enters viewport ────────────
+    let _played = false;
+    function runAutoplay() {
+      if (_played) return;
+      _played = true;
+      // Build annotations right away
+      buildAnnotations();
+      // Beat 0 — overview
       setTimeout(() => goOverview(), 600);
-      setTimeout(() => goBostanci(), 5500);
-      setTimeout(() => goPattern(), 11000);
+      // Beat 1 — Bostancı
+      const T = isMob ? { bo: 5500, pat: 11000, fin: 20000 }
+                      : { bo: 6000, pat: 12000, fin: 22000 };
+      setTimeout(() => goBostanci(), T.bo);
+      // Beat 2 — Yenikapı + pattern
+      setTimeout(() => goPattern(), T.pat);
+      // Finale
       setTimeout(() => {
         renderActive = false;
         heroText(null);
@@ -1595,11 +1590,13 @@ function playHeroMap() {
           titleLayer.style.opacity    = '1';
           titleLayer.style.pointerEvents = 'auto';
         }
-      }, 21000);
+      }, T.fin);
     }
 
-    // Build annotations after a short delay so map has sized
-    setTimeout(buildAnnotations, 400);
+    const vpObs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) { runAutoplay(); vpObs.disconnect(); }
+    }, { threshold: 0.15 });
+    vpObs.observe(canvas);
 
     // Subtle underlay pulse
     let _pulseUp = true;
