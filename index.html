@@ -236,8 +236,8 @@ body {
 /* ── Map legend (DOM, pinned inside map container) ── */
 #map-legend {
   position: absolute;
-  bottom: 16px;
-  right: 16px;
+  top: 16px;
+  left: 16px;
   z-index: 210;
   background: rgba(248,245,228,0.92);
   backdrop-filter: blur(8px);
@@ -249,9 +249,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 5px;
-}
-@media (max-width: 639px) {
-  #map-legend { right: auto; left: 16px; bottom: 16px; }
 }
 .map-legend-row {
   display: flex;
@@ -268,11 +265,11 @@ body {
   display: inline-block;
 }
 
-/* ── Map date stamp (top-left) ── */
+/* ── Map date stamp (top-left, below legend) ── */
 #map-date-stamp {
   position: absolute;
-  top: 18px;
-  left: 18px;
+  top: 100px;
+  left: 16px;
   z-index: 12;
   font-family: 'Courier Prime', monospace;
   font-size: clamp(10px, 1.4vw, 12px);
@@ -1143,7 +1140,9 @@ function playHeroMap() {
   let lineDrawStart= 0;
   const LINE_DUR   = 3000;
   let lineRawProg  = 0;
-  const pulseRings = [];
+  const pulseRings  = [];
+  const cumRings    = []; // geo-anchored persistent rings (Act 3), re-projected each frame
+  const activeLabels= []; // geo-anchored station labels with fade timing
   let renderActive = true;
   let _map         = null;
 
@@ -1208,32 +1207,84 @@ function playHeroMap() {
     else { lineDrawing = false; }
   }
 
-  // ── Mapbox render event: pulse rings only ─────────────
+  // ── Mapbox render event — all geo-anchored overlays re-projected each frame ──
   function onMapRender() {
-    if (!renderActive || !mapReady || pulseRings.length === 0) return;
+    if (!renderActive || !mapReady) return;
     const now   = performance.now();
+    const FADE  = 600; // label fade duration ms
+    const needsRepaint = cumRings.length > 0 || pulseRings.some(r => now - r.t0 < r.dur)
+                      || activeLabels.some(l => l.showTime || l.hideTime);
+    if (!needsRepaint) return;
+
     const pNode = pulseG.node();
     pNode.innerHTML = '';
+
+    function mkCircle(cx, cy, r, op, sw) {
+      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', r);
+      c.setAttribute('fill','none'); c.setAttribute('stroke','#8080FF');
+      c.setAttribute('stroke-width', sw); c.setAttribute('opacity', op);
+      pNode.appendChild(c);
+    }
+    function mkLine(x1,y1,x2,y2,stroke,op) {
+      const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+      l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);
+      l.setAttribute('stroke',stroke);l.setAttribute('stroke-width','0.8');l.setAttribute('opacity',op);
+      pNode.appendChild(l);
+    }
+    function mkText(x,y,txt,sz,bold,fill,op) {
+      const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',x);t.setAttribute('y',y);
+      t.setAttribute('font-family','DM Sans,sans-serif');t.setAttribute('font-size',sz);
+      t.setAttribute('font-weight',bold?'600':'400');t.setAttribute('fill',fill);
+      t.setAttribute('opacity',op);t.textContent=txt;
+      pNode.appendChild(t);
+    }
+
+    // 1 — persistent cumulative rings (geo-anchored, re-projected every frame)
+    cumRings.forEach(ring => {
+      const pt = project(ring.lon, ring.lat);
+      if (!pt) return;
+      mkCircle(pt[0].toFixed(1), pt[1].toFixed(1), ring.r, ring.op, ring.sw);
+    });
+
+    // 2 — transient pulse rings (geo-anchored, animate out over dur ms)
     const alive = pulseRings.filter(r => now - r.t0 < r.dur);
-    pulseRings.length = 0;
-    pulseRings.push(...alive);
+    pulseRings.length = 0; pulseRings.push(...alive);
     alive.forEach(ring => {
       const t  = (now - ring.t0) / ring.dur;
       const pt = project(ring.lon, ring.lat);
       if (!pt) return;
       const r  = (5 + (1 - Math.pow(1-t,2)) * ring.maxR).toFixed(1);
       const op = (0.8 * (1-t)).toFixed(3);
-      const c  = document.createElementNS('http://www.w3.org/2000/svg','circle');
-      c.setAttribute('cx', pt[0].toFixed(1));
-      c.setAttribute('cy', pt[1].toFixed(1));
-      c.setAttribute('r', r);
-      c.setAttribute('fill','none');
-      c.setAttribute('stroke','#8080FF');
-      c.setAttribute('stroke-width', isMob ? '2' : '1.8');
-      c.setAttribute('opacity', op);
-      pNode.appendChild(c);
+      mkCircle(pt[0].toFixed(1), pt[1].toFixed(1), r, op, isMob ? '2' : '1.8');
     });
-    if (alive.length > 0) _map.triggerRepaint();
+
+    // 3 — station labels (geo-anchored, fade in/out via timing)
+    activeLabels.forEach(lbl => {
+      if (!lbl.showTime) return;
+      let op;
+      if (lbl.hideTime) {
+        const prog = (now - lbl.hideTime) / FADE;
+        if (prog >= 1) { lbl.showTime = null; lbl.hideTime = null; return; }
+        op = (1 - prog).toFixed(3);
+      } else {
+        op = Math.min(1, (now - lbl.showTime) / FADE).toFixed(3);
+      }
+      const pt = project(lbl.lon, lbl.lat);
+      if (!pt) return;
+      const ox = isMob ? 12 : 16, oy = -10;
+      const lx = pt[0]+ox, ly = pt[1]+oy;
+      mkLine(pt[0]+5, pt[1]-3, lx-3, ly+6, lbl.lineColor, op*0.55);
+      lbl.lines.forEach((ln, i) => {
+        const sz = (i===0) ? (isMob?'11px':'13px') : (isMob?'9px':'11px');
+        mkText(lx, ly + i*(isMob?14:16), ln.text, sz, i===0, ln.color, op);
+      });
+    });
+
+    if (cumRings.length > 0 || alive.length > 0 || activeLabels.some(l=>l.showTime)) {
+      _map.triggerRepaint();
+    }
   }
 
   // ── Canvas fade-in ────────────────────────────────────
@@ -1408,25 +1459,22 @@ function playHeroMap() {
   // Failsafe — start anyway if tiles stall
   setTimeout(() => { if (!mapReady) { mapReady = true; map.triggerRepaint(); startCinematic(); } }, 8000);
 
-  // ── 5-act autoplay cinematic ──────────────────────────────────
+  // ── 6-act autoplay cinematic (~37s) ──────────────────────────
   function startCinematic() {
-    const ease = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; // easeInOutCubic
+    const ease = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
 
     // ── DOM caption elements ──────────────────────────────────────
-    // Date stamp — top-left
     const dsEl = document.createElement('div');
     dsEl.id = 'map-date-stamp';
     dsEl.textContent = '30 Ekim 2021';
     dsEl.style.opacity = '0';
     canvas.appendChild(dsEl);
 
-    // Year ticker — top-right
     const yrEl = document.createElement('div');
     yrEl.id = 'map-year-ticker';
     yrEl.style.opacity = '0';
     canvas.appendChild(yrEl);
 
-    // Legend — pinned bottom-right (always visible once map starts)
     const lgEl = document.createElement('div');
     lgEl.id = 'map-legend';
     lgEl.innerHTML = `
@@ -1436,83 +1484,59 @@ function playHeroMap() {
     `;
     canvas.appendChild(lgEl);
 
-    // ── SVG annotation groups ─────────────────────────────────────
-    const annos = {};
-    function showAnno(id, visible) {
-      if (annos[id]) annos[id].style.opacity = visible ? '1' : '0';
+    // ── Station labels (geo-anchored via activeLabels, re-projected each frame) ──
+    function registerLabel(id, lon, lat, lineColor, lines) {
+      activeLabels.push({ id, lon, lat, lineColor, lines, showTime: null, hideTime: null });
     }
-
-    // Cumulative rings group (Act 3 persistent circles)
-    const cumRingG = svg.append('g').attr('id','cum-rings');
+    function showAnno(id, visible) {
+      const lbl = activeLabels.find(l => l.id === id);
+      if (!lbl) return;
+      if (visible) {
+        lbl.showTime = performance.now();
+        lbl.hideTime = null;
+      } else {
+        if (lbl.showTime) lbl.hideTime = performance.now();
+      }
+      if (_map) _map.triggerRepaint();
+    }
 
     function buildAnnotations() {
-      // Station label helper
-      function makeStationLabel(id, s, color, labelLines) {
-        const pt = project(s.lon, s.lat);
-        const g = svg.append('g').style('opacity','0').style('transition','opacity 0.6s ease');
-        annos[id] = g.node();
-        if (!pt) return;
-        const ox = isMob ? 14 : 18, oy = -8;
-        const lx = pt[0] + ox, ly = pt[1] + oy;
-        g.append('line')
-          .attr('x1', pt[0]+5).attr('y1', pt[1]-3)
-          .attr('x2', lx-3).attr('y2', ly+4)
-          .attr('stroke', color).attr('stroke-width','0.8').attr('opacity','0.55');
-        labelLines.forEach((line, i) => {
-          g.append('text')
-            .attr('x', lx).attr('y', ly + i * (isMob ? 13 : 14))
-            .attr('font-family','DM Sans,sans-serif')
-            .attr('font-size', i === 0 ? (isMob?'10px':'12px') : (isMob?'9px':'10px'))
-            .attr('font-weight', i === 0 ? '600' : '400')
-            .attr('fill', i === 0 ? '#374152' : color)
-            .text(line);
-        });
-      }
-
-      const boS = HS.find(s => s.n === 'Bostancı');
-      const ykS = HS.find(s => s.n === 'Yenikapı');
-      if (boS) makeStationLabel('label-bostanci', boS, '#8080FF', ['Bostancı', '3 can kaybı']);
-      if (ykS) makeStationLabel('label-yenikapi', ykS, '#8080FF', ['Yenikapı', '6 can kaybı']);
+      // Bostancı: date-only subtitle (no count — Act 2 is first incident, count shown later)
+      registerLabel('label-bostanci', 29.0969, 40.9629, '#8080FF', [
+        { text: 'Bostancı', color: '#374152' },
+        { text: '30 Ekim 2021', color: '#8080FF' },
+      ]);
+      // Yenikapı: full count (Act 4)
+      registerLabel('label-yenikapi', 28.9506, 41.0047, '#8080FF', [
+        { text: 'Yenikapı', color: '#374152' },
+        { text: '6 can kaybı', color: '#8080FF' },
+      ]);
     }
 
-    // Act 3 — year-by-year wave stations (progressive reveal)
+    // ── Act 3 wave data ───────────────────────────────────────────
     const WAVES = [
-      // 2021: first incident location
-      [{ lon:29.0969, lat:40.9629 }],
-      // 2022: +2 new (3 cumulative)
-      [{ lon:28.8695, lat:40.9781 }, { lon:29.0106, lat:41.0235 }],
-      // 2023: +4 new (7 cumulative)
+      [{ lon:29.0969, lat:40.9629 }],                                            // 2021
+      [{ lon:28.8695, lat:40.9781 }, { lon:29.0106, lat:41.0235 }],              // 2022
       [{ lon:28.9506, lat:41.0047 }, { lon:29.0307, lat:41.0183 },
-       { lon:29.1235, lat:40.9487 }, { lon:28.8402, lat:40.9822 }],
-      // 2024: +2 more prominent (13 cumulative)
-      [{ lon:28.9506, lat:41.0047 }, { lon:29.0969, lat:40.9629 }],
+       { lon:29.1235, lat:40.9487 }, { lon:28.8402, lat:40.9822 }],              // 2023
+      [{ lon:28.9506, lat:41.0047 }, { lon:29.0969, lat:40.9629 }],              // 2024
     ];
-    const WAVE_YEARS = ['2021', '2022', '2023', '2024'];
+    const WAVE_YEARS = ['2021','2022','2023','2024'];
 
     function showWave(wi) {
       yrEl.textContent = WAVE_YEARS[wi];
       yrEl.style.opacity = '1';
-      // Dim previous circles
-      cumRingG.selectAll('circle')
-        .transition().duration(300)
-        .attr('opacity', 0.28).attr('stroke-width', 1);
-      // Add new circles + brief pulse
+      // Dim all existing cumRings
+      cumRings.forEach(r => { r.op = 0.28; r.sw = 1; });
+      // Push new geo-anchored rings (drawn by onMapRender, re-projected each frame)
       WAVES[wi].forEach(s => {
-        const pt = project(s.lon, s.lat);
-        if (pt) {
-          cumRingG.append('circle')
-            .attr('cx', pt[0]).attr('cy', pt[1])
-            .attr('r', 3).attr('fill','none')
-            .attr('stroke','#8080FF').attr('stroke-width', 2)
-            .attr('opacity', 0)
-            .transition().duration(600)
-              .attr('r', isMob ? 14 : 12).attr('opacity', 0.72);
-        }
+        cumRings.push({ lon: s.lon, lat: s.lat, r: isMob ? 14 : 12, op: 0.72, sw: 2 });
         addPulse(s.lon, s.lat);
       });
+      if (_map) _map.triggerRepaint();
     }
 
-    // ── Autoplay: fires once when canvas enters viewport ──────────
+    // ── Autoplay: fires once on viewport entry ────────────────────
     let _played = false;
     function runAutoplay() {
       if (_played) return;
@@ -1520,23 +1544,16 @@ function playHeroMap() {
       buildAnnotations();
 
       // ── ACT 1: EXPOSITION  t=0–7s ────────────────────────────
-      // t=0: first overlay, line still hidden
       heroText('İstanbul. İki yaka, on dört milyon insan.');
+      map.flyTo({ center:MAP_CENTER, zoom:ZOOM_INIT+0.5, pitch:PITCH_INIT,
+        bearing:BEARING, duration:1500, essential:true, easing:ease });
 
-      // t=0–1.5: camera — slight zoom in (1500ms)
-      map.flyTo({
-        center: MAP_CENTER, zoom: ZOOM_INIT + 0.5, pitch: PITCH_INIT, bearing: BEARING,
-        duration: 1500, essential: true, easing: ease,
-      });
-
-      // t=1500: clear overlay
       setTimeout(() => heroText(null), 1500);
 
-      // t=3000: "Marmaray" overlay + line draw + metro + stations
       setTimeout(() => {
         heroText('Marmaray, Boğaz\'ın altından geçen tek metro hattı.');
-        try { map.setPaintProperty('metro-context','line-opacity', 0.7); } catch(e) {}
-        try { map.setPaintProperty('marmaray-underlay','line-opacity', 0.18); } catch(e) {}
+        try { map.setPaintProperty('metro-context','line-opacity', 0.7); } catch(e){}
+        try { map.setPaintProperty('marmaray-underlay','line-opacity', 0.18); } catch(e){}
         lineDrawing = true; lineDrawStart = performance.now();
         requestAnimationFrame(tickLine);
         try {
@@ -1545,25 +1562,16 @@ function playHeroMap() {
           map.setPaintProperty('stations-dot','circle-stroke-opacity',
             ['case',['>', ['get','incidents'],0], 0, 0.45]);
           map.setPaintProperty('stations-glow','circle-opacity', 0.22);
-        } catch(e) {}
+        } catch(e){}
       }, 3000);
 
-      // t=5000: third overlay
       setTimeout(() => heroText('On bir yıl. Günde <strong>2.2 milyon yolcu</strong>.'), 5000);
-
-      // t=7000: clear, Act 1 end
       setTimeout(() => heroText(null), 7000);
 
       // ── ACT 2: INCITING INCIDENT  t=7–12s ────────────────────
-      // t=7000: flyTo Bostancı (2s)
-      setTimeout(() => {
-        map.flyTo({
-          center:[29.0969, 40.9629], zoom: 14.5, pitch: 65, bearing: BEARING,
-          duration: 2000, essential: true, easing: ease,
-        });
-      }, 7000);
+      setTimeout(() => map.flyTo({ center:[29.0969,40.9629], zoom:14.5, pitch:65,
+        bearing:BEARING, duration:2000, essential:true, easing:ease }), 7000);
 
-      // t=9000: date stamp + single pulse + label
       setTimeout(() => {
         dsEl.style.transition = 'opacity 0.4s ease';
         dsEl.style.opacity = '1';
@@ -1571,10 +1579,9 @@ function playHeroMap() {
         showAnno('label-bostanci', true);
       }, 9000);
 
-      // t=10000: overlay
-      setTimeout(() => heroText('Marmaray\'da ölümle sonuçlanan ilk intihar.'), 10000);
+      // Fixed text: first fatal incident happened here (no contradiction with count)
+      setTimeout(() => heroText('Marmaray\'daki ilk ölümlü olay burada yaşandı.'), 10000);
 
-      // t=12000: clear Act 2
       setTimeout(() => {
         heroText(null);
         dsEl.style.opacity = '0';
@@ -1582,72 +1589,51 @@ function playHeroMap() {
       }, 12000);
 
       // ── ACT 3: RISING ACTION  t=12–18.8s ─────────────────────
-      // t=12000: flyTo overview (2s)
-      setTimeout(() => {
-        map.flyTo({
-          center: MAP_CENTER, zoom: ZOOM_INIT, pitch: PITCH_INIT, bearing: BEARING,
-          duration: 2000, essential: true, easing: ease,
-        });
-      }, 12000);
+      setTimeout(() => map.flyTo({ center:MAP_CENTER, zoom:ZOOM_INIT, pitch:PITCH_INIT,
+        bearing:BEARING, duration:2000, essential:true, easing:ease }), 12000);
 
-      // t=14000: overlay + year ticker, then 4 waves at 1.2s intervals
       setTimeout(() => {
         heroText('Sonra her yıl daha fazla. İki. Üç. Yedi. On üç.');
         yrEl.style.transition = 'opacity 0.4s ease';
       }, 14000);
-      [0,1,2,3].forEach(wi => setTimeout(() => showWave(wi), 14000 + wi * 1200));
+      [0,1,2,3].forEach(wi => setTimeout(() => showWave(wi), 14000 + wi*1200));
 
-      // t=18800: hide ticker + overlay
-      setTimeout(() => {
-        yrEl.style.opacity = '0';
-        heroText(null);
-      }, 18800);
+      setTimeout(() => { yrEl.style.opacity = '0'; heroText(null); }, 18800);
 
       // ── ACT 4: CLIMAX  t=18–24s ──────────────────────────────
-      // t=18000: flyTo Yenikapı (2s)
-      setTimeout(() => {
-        map.flyTo({
-          center:[28.9506, 41.0047], zoom: 15.2, pitch: 60, bearing: BEARING,
-          duration: 2000, essential: true, easing: ease,
-        });
-      }, 18000);
+      setTimeout(() => map.flyTo({ center:[28.9506,41.0047], zoom:15.2, pitch:60,
+        bearing:BEARING, duration:2000, essential:true, easing:ease }), 18000);
 
-      // t=20000: 6 sequential pulses at 0.4s intervals
       for (let k = 0; k < 6; k++) {
-        setTimeout(() => addPulse(28.9506, 41.0047), 20000 + k * 400);
+        setTimeout(() => addPulse(28.9506, 41.0047), 20000 + k*400);
       }
-
-      // t=20000: Yenikapı label
       setTimeout(() => showAnno('label-yenikapi', true), 20000);
-
-      // t=22000: overlay
       setTimeout(() => heroText('Yenikapı. En kalabalık aktarma noktası. Dört yıl, <strong>altı kişi</strong>.'), 22000);
+      setTimeout(() => { heroText(null); showAnno('label-yenikapi', false); }, 24000);
 
-      // t=24000: clear Act 4
-      setTimeout(() => {
-        heroText(null);
-        showAnno('label-yenikapi', false);
-      }, 24000);
+      // ── ACT 5: PATTERN  t=24–29s ─────────────────────────────
+      setTimeout(() => map.flyTo({ center:MAP_CENTER, zoom:ZOOM_INIT, pitch:PITCH_INIT,
+        bearing:BEARING, duration:2000, essential:true, easing:ease }), 24000);
 
-      // ── ACT 5: FALLING ACTION  t=24–29.5s ────────────────────
-      // t=24000: flyTo full Istanbul pull-back (2s)
-      setTimeout(() => {
-        map.flyTo({
-          center: MAP_CENTER, zoom: ZOOM_INIT, pitch: PITCH_INIT, bearing: BEARING,
-          duration: 2000, essential: true, easing: ease,
-        });
-      }, 24000);
-
-      // t=26000: all incident rings pulse in unison + final overlay
       setTimeout(() => {
         HS.filter(s => s.d > 0).forEach(s => addPulse(s.lon, s.lat));
         heroText('Dört yıl. <strong>29 olay. 20 ölüm.</strong> Ve eğri yukarı çıkmaya devam ediyor.');
       }, 26000);
+      setTimeout(() => heroText(null), 28500);
 
-      // t=28000: fade map to beige, title fades in
+      // ── ACT 6: REFLECTION  t=29–35.5s ────────────────────────
+      setTimeout(() => heroText('Sayı her yıl daha hızlı artıyor.'), 29000);
+      setTimeout(() => heroText(null), 31000);
+      setTimeout(() => heroText(
+        'Çözüm var. Tokyo\'da peronlara mavi ışık konuldu — intiharlar %84 azaldı. Seul\'de platform kapıları kullanılıyor. Londra metrosunda ray altında güvenlik boşlukları mevcut.'
+      ), 31500);
+      setTimeout(() => heroText(null), 34000);
+      setTimeout(() => heroText('İstanbul\'da hâlâ açık peronlar.'), 34000);
+      setTimeout(() => heroText(null), 35500);
+
+      // ── FADE → TITLE  t=35.5–37s ─────────────────────────────
       setTimeout(() => {
         renderActive = false;
-        heroText(null);
         d3.select(canvas).transition().duration(1500).ease(d3.easeLinear)
           .style('opacity', 0)
           .on('end', () => { try { map.remove(); } catch(e){} endCinematic(); });
@@ -1656,23 +1642,20 @@ function playHeroMap() {
           titleLayer.style.opacity    = '1';
           titleLayer.style.pointerEvents = 'auto';
         }
-      }, 28000);
+      }, 35500);
     }
 
-    // Fire once on viewport entry, never again
     const vpObs = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting) { runAutoplay(); vpObs.disconnect(); }
     }, { threshold: 0.15 });
     vpObs.observe(canvas);
 
-    // Subtle underlay pulse after line draw completes
     let _pulseUp = true;
     setInterval(() => {
       try {
-        const v = _pulseUp ? 0.22 : 0.14;
-        map.setPaintProperty('marmaray-underlay','line-opacity', v);
+        map.setPaintProperty('marmaray-underlay','line-opacity', _pulseUp ? 0.22 : 0.14);
         _pulseUp = !_pulseUp;
-      } catch(e) {}
+      } catch(e){}
     }, 2800);
   }
 }
