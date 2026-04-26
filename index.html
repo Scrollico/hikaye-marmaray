@@ -337,6 +337,70 @@ body {
   }
 }
 
+/* ── Map tile loader ── */
+#map-tile-loader {
+  position: absolute;
+  inset: 0;
+  z-index: 215;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(248,245,228,0.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+#map-tile-loader .loader-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: rgba(55,65,82,0.8);
+}
+#map-tile-loader .loader-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #8080FF;
+  animation: loaderPulse 1s ease-in-out infinite;
+}
+@keyframes loaderPulse {
+  0%,100% { opacity: 0.3; transform: scale(0.8); }
+  50%      { opacity: 1;   transform: scale(1.2); }
+}
+
+/* ── City sparkline cards ── */
+.city-spark {
+  position: absolute;
+  left: 16px;
+  bottom: 22%;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+.city-spark .spark-stat {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8080FF;
+  letter-spacing: 0.02em;
+}
+.city-spark .spark-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px;
+  color: #6b6660;
+  letter-spacing: 0.04em;
+}
+@media (max-width: 640px) {
+  .city-spark { left: 10px; bottom: 18%; }
+  .city-spark .spark-stat { font-size: 10px; }
+  .city-spark .spark-label { font-size: 9px; }
+}
+
 /* ════════════════════════════════════════
    EDITORIAL SECTIONS
 ════════════════════════════════════════ */
@@ -1123,6 +1187,18 @@ function playHeroMap() {
     if (mbDiv._mbMap) { try { mbDiv._mbMap.remove(); } catch(e){} }
     mbDiv.innerHTML = '';
   }
+  mbDiv.style.opacity = '0'; // hidden until tile warmup completes
+
+  // ── Tile loader UI ────────────────────────────────────
+  let loaderUi = document.getElementById('map-tile-loader');
+  if (!loaderUi) {
+    loaderUi = document.createElement('div');
+    loaderUi.id = 'map-tile-loader';
+    loaderUi.innerHTML = '<div class="loader-text">Harita yükleniyor</div><div class="loader-dot"></div>';
+    canvas.appendChild(loaderUi);
+  }
+  loaderUi.style.opacity = '1';
+  loaderUi.style.display = '';
 
   // ── SVG overlay — pulse rings only ───────────────────
   svgEl.removeAttribute('viewBox');
@@ -1481,11 +1557,73 @@ function playHeroMap() {
         }, 'marmaray-line');
       })
       .catch(() => {})
-      .finally(() => { mapReady = true; map.triggerRepaint(); startCinematic(); });
+      .finally(() => {
+        mapReady = true;
+        map.triggerRepaint();
+
+        // ── Tile warmup: jumpTo each city so tiles pre-cache ─────────
+        const WARMUP_CITIES = [
+          { center:[139.7008, 35.7011], zoom:16 },
+          { center:[127.0276, 37.4979], zoom:16 },
+          { center:[-0.1238,  51.5308], zoom:16 },
+          { center:MAP_CENTER,          zoom:ZOOM_INIT },
+        ];
+        let warmupDone = false;
+        const loaderEl = document.getElementById('map-tile-loader');
+
+        async function runWarmup() {
+          const deadline = Date.now() + 8000;
+          for (const c of WARMUP_CITIES) {
+            if (Date.now() > deadline) {
+              console.warn('[warmup] timeout — skipping remaining cities');
+              break;
+            }
+            map.jumpTo({ center: c.center, zoom: c.zoom, pitch:0, bearing:0 });
+            await Promise.race([
+              new Promise(r => map.once('idle', r)),
+              new Promise(r => setTimeout(r, 2000)),
+            ]);
+          }
+          // Return to Istanbul start position
+          map.jumpTo({ center:MAP_CENTER, zoom:ZOOM_INIT, pitch:PITCH_INIT, bearing:BEARING });
+          warmupDone = true;
+
+          // Fade loader out, fade map in
+          if (loaderEl) loaderEl.style.opacity = '0';
+          mbDiv.style.transition = 'opacity 0.6s ease';
+          mbDiv.style.opacity = '1';
+          setTimeout(() => {
+            if (loaderEl) loaderEl.style.display = 'none';
+            startCinematic();
+          }, 650);
+        }
+
+        // Keep mbDiv hidden during warmup
+        mbDiv.style.opacity = '0';
+        runWarmup().catch(() => {
+          warmupDone = true;
+          if (loaderEl) loaderEl.style.opacity = '0';
+          mbDiv.style.transition = 'opacity 0.6s ease';
+          mbDiv.style.opacity = '1';
+          setTimeout(() => {
+            if (loaderEl) loaderEl.style.display = 'none';
+            startCinematic();
+          }, 650);
+        });
+      });
   });
 
-  // Failsafe — start anyway if tiles stall
-  setTimeout(() => { if (!mapReady) { mapReady = true; map.triggerRepaint(); startCinematic(); } }, 8000);
+  // Failsafe — if map.on('load') never fires, start anyway after 12s
+  setTimeout(() => {
+    if (!mapReady) {
+      mapReady = true;
+      map.triggerRepaint();
+      const loaderEl = document.getElementById('map-tile-loader');
+      if (loaderEl) { loaderEl.style.opacity = '0'; loaderEl.style.display = 'none'; }
+      mbDiv.style.opacity = '1';
+      startCinematic();
+    }
+  }, 12000);
 
   // ── 6-act autoplay cinematic (~37s) ──────────────────────────
   function startCinematic() {
@@ -1644,16 +1782,51 @@ function playHeroMap() {
       }, 26000);
       setTimeout(() => heroText(null), 28500);
 
-      // ── ACT 6: CITY HOP  t=29–51s ───────────────────────────
-      // Small exemplar pulse: same purple, smaller max radius
+      // ── ACT 6: CITY HOP  t=29–80s ───────────────────────────
+      // Exemplar pulse — smaller than Istanbul incident rings
       function addExemplarPulse(lon, lat) {
-        pulseRings.push({ lon, lat, t0: performance.now(), dur: 1800, maxR: isMob ? 18 : 14 });
+        pulseRings.push({ lon, lat, t0: performance.now(), dur: 2000, maxR: isMob ? 22 : 18 });
         if (_map) _map.triggerRepaint();
       }
 
-      const easeOut = t => t * (2 - t); // easeOutQuad
+      const easeOut = t => t * (2 - t);
 
-      // 6a — Trend (t=29–32s): camera locked, rings settle
+      // ── Sparkline helper ─────────────────────────────────
+      // Tokyo: Matsubayashi, Sawada & Ueda (2013), J Affect Disord 147(1-3):487-9
+      // DOI: 10.1016/j.jad.2013.01.036 — reported ~84% reduction at stations with blue LEDs
+      // Seoul: platform screen doors Line 2, phased 2002–2009; Lee et al. studies show
+      //   dramatic reduction in subway suicide attempts — exact % varies, using soft language
+      // London: anti-suicide pits (1920s onward); architectural, not extensively quantified
+      function mkSpark(id, stat, sparkPoints, label) {
+        let el = document.getElementById(id);
+        if (!el) {
+          el = document.createElement('div');
+          el.id = id;
+          el.className = 'city-spark';
+          // Sparkline SVG: two-point line, 60×18
+          const [x1,y1,x2,y2] = sparkPoints; // already in svg coords
+          el.innerHTML = `
+            <div class="spark-stat">${stat}</div>
+            <svg width="60" height="18" viewBox="0 0 60 18" style="overflow:visible">
+              <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+                stroke="#374152" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="${x2}" cy="${y2}" r="3" fill="#8080FF"/>
+            </svg>
+            <div class="spark-label">${label}</div>`;
+          canvas.appendChild(el);
+        }
+        return el;
+      }
+
+      // Pre-create sparklines (hidden)
+      const sparkTokyo  = mkSpark('spark-tokyo',  '%84 azalma',  [4,14,56,4],   'Tokyo Yamanote, 2002–2010');
+      const sparkSeoul  = mkSpark('spark-seoul',  'ciddi azalma', [4,14,56,6],  'Seul Hat 2, 2009–2019');
+      const sparkLondon = mkSpark('spark-london', 'hayatta kalma şansını artırıyor', [4,14,56,8], 'Londra Underground');
+
+      function showSpark(el)  { el.style.opacity = '1'; }
+      function hideSpark(el)  { el.style.opacity = '0'; }
+
+      // ── 6a: Trend t=29–31.5s — camera locked, rings settle ────
       setTimeout(() => {
         cumRings.forEach(r => { r.op = 0.4; r.sw = 1; });
         if (_map) _map.triggerRepaint();
@@ -1661,53 +1834,67 @@ function playHeroMap() {
       }, 29000);
       setTimeout(() => heroText(null), 31400);
 
-      // 6b — Setup + begin intercontinental flight (t=32s)
+      // ── 6b: Setup t=31.5s, fly Istanbul→Tokyo (8500ms) ────────
       setTimeout(() => heroText('Başka şehirlerde başka tercihler yapıldı.'), 31500);
       setTimeout(() => {
-        // Long arcing Istanbul → Tokyo: curve 2.5 zooms out to globe scale
-        map.flyTo({ center:[139.7008, 35.7011], zoom:16, pitch:60, bearing:0,
-          duration:7000, curve:2.5, speed:0.6, easing:easeOut, essential:true });
+        map.flyTo({ center:[139.7008,35.7011], zoom:16, pitch:60, bearing:0,
+          duration:8500, curve:2.0, speed:0.55, easing:easeOut, essential:true });
       }, 32500);
       setTimeout(() => heroText(null), 33900);
 
-      // 6c — In flight overlay "Tokyo'ya." during the arc (t=34–37s)
+      // ── 6c: In-flight overlay t=34s ────────────────────────────
       setTimeout(() => heroText('Tokyo\'ya.'), 34000);
 
-      // 6c — Tokyo arrival + pulse + overlay (t=39.5s after 7s flight)
-      setTimeout(() => {
-        heroText(null);
-        addExemplarPulse(139.7008, 35.7011);
-      }, 39400);
-      setTimeout(() => heroText('JR hatları, peronlarda mavi ışık. Yumuşak, sürekli yanan.'), 39500);
+      // Arrival at t=41000 (32500+8500). Hold 0.6s then pulse+overlay.
+      setTimeout(() => heroText(null), 40900);
+      setTimeout(() => { addExemplarPulse(139.7008,35.7011); showSpark(sparkTokyo); }, 41600);
+      setTimeout(() => heroText('JR hatları, peronlarda mavi ışık. Yumuşak, sürekli yanan.'), 41700);
 
-      // 6d — Seoul (t=42s)
+      // ── 6d: fly Tokyo→Seoul (5500ms) t=45.2s ──────────────────
+      setTimeout(() => { heroText(null); hideSpark(sparkTokyo); }, 45100);
       setTimeout(() => {
-        heroText(null);
-        map.flyTo({ center:[127.0276, 37.4979], zoom:16, pitch:60, bearing:0,
-          duration:3500, curve:1.8, easing:easeOut, essential:true });
-      }, 42000);
-      setTimeout(() => heroText('Seul. Platform kapıları. Tren gelmeden açılmaz.'), 42500);
-      setTimeout(() => addExemplarPulse(127.0276, 37.4979), 45400);
+        map.flyTo({ center:[127.0276,37.4979], zoom:16, pitch:60, bearing:0,
+          duration:5500, curve:1.6, speed:0.7, easing:easeOut, essential:true });
+      }, 45200);
+      setTimeout(() => heroText('Seul\'e.'), 45300);
 
-      // 6e — London (t=46s)
-      setTimeout(() => {
-        heroText(null);
-        map.flyTo({ center:[-0.1238, 51.5308], zoom:16, pitch:60, bearing:0,
-          duration:3500, curve:1.8, easing:easeOut, essential:true });
-      }, 46000);
-      setTimeout(() => heroText('Londra. Ray altında güvenlik boşluğu — düşene dokunulmadan tren durdurulabilsin diye.'), 46500);
-      setTimeout(() => addExemplarPulse(-0.1238, 51.5308), 49400);
+      // Arrival t=50700 (45200+5500)
+      setTimeout(() => heroText(null), 50600);
+      setTimeout(() => { addExemplarPulse(127.0276,37.4979); showSpark(sparkSeoul); }, 51300);
+      setTimeout(() => heroText('Seul. Platform kapıları. Tren gelmeden açılmaz.'), 51400);
 
-      // 6f — Return to Istanbul (t=50s)
+      // ── 6e: fly Seoul→London (5500ms) t=54.9s ─────────────────
+      setTimeout(() => { heroText(null); hideSpark(sparkSeoul); }, 54800);
       setTimeout(() => {
-        heroText(null);
+        map.flyTo({ center:[-0.1238,51.5308], zoom:16, pitch:60, bearing:0,
+          duration:5500, curve:1.6, speed:0.7, easing:easeOut, essential:true });
+      }, 54900);
+      setTimeout(() => heroText('Londra\'ya.'), 55000);
+
+      // Arrival t=60400 (54900+5500)
+      setTimeout(() => heroText(null), 60300);
+      setTimeout(() => { addExemplarPulse(-0.1238,51.5308); showSpark(sparkLondon); }, 61000);
+      setTimeout(() => heroText('Londra. Ray altında güvenlik boşluğu — düşene dokunulmadan tren durdurulabilsin diye.'), 61100);
+
+      // ── 6f: fly London→Istanbul (5000ms) t=64.6s ──────────────
+      setTimeout(() => { heroText(null); hideSpark(sparkLondon); }, 64500);
+      setTimeout(() => {
         map.flyTo({ center:MAP_CENTER, zoom:ZOOM_INIT, pitch:PITCH_INIT,
-          bearing:BEARING, duration:4000, curve:1.8, easing:easeOut, essential:true });
-      }, 50000);
-      setTimeout(() => heroText('İstanbul\'da peronlar açık.'), 51500);
-      setTimeout(() => heroText(null), 54400);
+          bearing:BEARING, duration:5000, curve:1.8, speed:0.7, easing:easeOut, essential:true });
+      }, 64600);
 
-      // ── FADE → TITLE  t=54.5s ────────────────────────────────
+      // Arrival t=69600. Hold 1.4s, then overlay.
+      setTimeout(() => heroText('İstanbul\'da peronlar açık.'), 71000);
+      setTimeout(() => heroText(null), 73400);
+
+      // ── CODA D: psychology lines t=73.5s ──────────────────────
+      // Camera fully still. Map on wide Istanbul. All rings at 0.4 opacity.
+      setTimeout(() => heroText('Peron kapısı bir tedbir. Sebep değil.'), 73500);
+      setTimeout(() => heroText(null), 75900);
+      setTimeout(() => heroText('Türkiye\'de ruh sağlığı desteği hâlâ yetersiz. Bir mavi ışık, kırk yıllık eksikliği kapatmaz.'), 76000);
+      setTimeout(() => heroText(null), 78900);
+
+      // ── FADE → TITLE  t=80.4s ─────────────────────────────────
       setTimeout(() => {
         renderActive = false;
         d3.select(canvas).transition().duration(1500).ease(d3.easeLinear)
@@ -1718,7 +1905,7 @@ function playHeroMap() {
           titleLayer.style.opacity    = '1';
           titleLayer.style.pointerEvents = 'auto';
         }
-      }, 54500);
+      }, 80400);
     }
 
     const vpObs = new IntersectionObserver(entries => {
