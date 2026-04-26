@@ -1644,17 +1644,32 @@ function playHeroMap() {
       }, 26000);
       setTimeout(() => heroText(null), 28500);
 
-      // ── ACT 6: REFLECTION  t=29–35.5s ────────────────────────
-      setTimeout(() => heroText('Sayı her yıl daha hızlı artıyor.'), 29000);
-      setTimeout(() => heroText(null), 31000);
-      setTimeout(() => heroText(
-        'Çözüm var. Tokyo\'da peronlara mavi ışık konuldu — intiharlar %84 azaldı. Seul\'de platform kapıları kullanılıyor. Londra metrosunda ray altında güvenlik boşlukları mevcut.'
-      ), 31500);
-      setTimeout(() => heroText(null), 34000);
-      setTimeout(() => heroText('İstanbul\'da hâlâ açık peronlar.'), 34000);
-      setTimeout(() => heroText(null), 35500);
+      // ── ACT 6: REFLECTION  t=29–39s ─────────────────────────
+      // Camera stays locked on Act 5 wide view. No flyTo.
+      // All cumRings fade to 0.4 opacity — visual rest.
+      setTimeout(() => {
+        cumRings.forEach(r => { r.op = 0.4; r.sw = 1; });
+        if (_map) _map.triggerRepaint();
+        heroText('Sayı her yıl artıyor.');
+      }, 29000);
 
-      // ── FADE → TITLE  t=35.5–37s ─────────────────────────────
+      setTimeout(() => heroText(null), 31400);
+
+      setTimeout(() => heroText('Başka şehirlerde başka tercihler yapıldı.'), 31500);
+
+      setTimeout(() => heroText(null), 33900);
+
+      setTimeout(() => heroText(
+        'Tokyo: peronlarda mavi ışık. Seul: platform kapıları. Londra: ray altında güvenlik boşluğu.'
+      ), 34000);
+
+      setTimeout(() => heroText(null), 36400);
+
+      setTimeout(() => heroText('İstanbul\'da peronlar açık.'), 36500);
+
+      setTimeout(() => heroText(null), 38900);
+
+      // ── FADE → TITLE  t=39–40.5s ─────────────────────────────
       setTimeout(() => {
         renderActive = false;
         d3.select(canvas).transition().duration(1500).ease(d3.easeLinear)
@@ -1665,7 +1680,7 @@ function playHeroMap() {
           titleLayer.style.opacity    = '1';
           titleLayer.style.pointerEvents = 'auto';
         }
-      }, 35500);
+      }, 39000);
     }
 
     const vpObs = new IntersectionObserver(entries => {
