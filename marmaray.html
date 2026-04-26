@@ -1644,32 +1644,70 @@ function playHeroMap() {
       }, 26000);
       setTimeout(() => heroText(null), 28500);
 
-      // ── ACT 6: REFLECTION  t=29–39s ─────────────────────────
-      // Camera stays locked on Act 5 wide view. No flyTo.
-      // All cumRings fade to 0.4 opacity — visual rest.
+      // ── ACT 6: CITY HOP  t=29–51s ───────────────────────────
+      // Small exemplar pulse: same purple, smaller max radius
+      function addExemplarPulse(lon, lat) {
+        pulseRings.push({ lon, lat, t0: performance.now(), dur: 1800, maxR: isMob ? 18 : 14 });
+        if (_map) _map.triggerRepaint();
+      }
+
+      const easeOut = t => t * (2 - t); // easeOutQuad
+
+      // 6a — Trend (t=29–32s): camera locked, rings settle
       setTimeout(() => {
         cumRings.forEach(r => { r.op = 0.4; r.sw = 1; });
         if (_map) _map.triggerRepaint();
         heroText('Sayı her yıl artıyor.');
       }, 29000);
-
       setTimeout(() => heroText(null), 31400);
 
+      // 6b — Setup + begin intercontinental flight (t=32s)
       setTimeout(() => heroText('Başka şehirlerde başka tercihler yapıldı.'), 31500);
-
+      setTimeout(() => {
+        // Long arcing Istanbul → Tokyo: curve 2.5 zooms out to globe scale
+        map.flyTo({ center:[139.7008, 35.7011], zoom:16, pitch:60, bearing:0,
+          duration:7000, curve:2.5, speed:0.6, easing:easeOut, essential:true });
+      }, 32500);
       setTimeout(() => heroText(null), 33900);
 
-      setTimeout(() => heroText(
-        'Tokyo: peronlarda mavi ışık. Seul: platform kapıları. Londra: ray altında güvenlik boşluğu.'
-      ), 34000);
+      // 6c — In flight overlay "Tokyo'ya." during the arc (t=34–37s)
+      setTimeout(() => heroText('Tokyo\'ya.'), 34000);
 
-      setTimeout(() => heroText(null), 36400);
+      // 6c — Tokyo arrival + pulse + overlay (t=39.5s after 7s flight)
+      setTimeout(() => {
+        heroText(null);
+        addExemplarPulse(139.7008, 35.7011);
+      }, 39400);
+      setTimeout(() => heroText('JR hatları, peronlarda mavi ışık. Yumuşak, sürekli yanan.'), 39500);
 
-      setTimeout(() => heroText('İstanbul\'da peronlar açık.'), 36500);
+      // 6d — Seoul (t=42s)
+      setTimeout(() => {
+        heroText(null);
+        map.flyTo({ center:[127.0276, 37.4979], zoom:16, pitch:60, bearing:0,
+          duration:3500, curve:1.8, easing:easeOut, essential:true });
+      }, 42000);
+      setTimeout(() => heroText('Seul. Platform kapıları. Tren gelmeden açılmaz.'), 42500);
+      setTimeout(() => addExemplarPulse(127.0276, 37.4979), 45400);
 
-      setTimeout(() => heroText(null), 38900);
+      // 6e — London (t=46s)
+      setTimeout(() => {
+        heroText(null);
+        map.flyTo({ center:[-0.1238, 51.5308], zoom:16, pitch:60, bearing:0,
+          duration:3500, curve:1.8, easing:easeOut, essential:true });
+      }, 46000);
+      setTimeout(() => heroText('Londra. Ray altında güvenlik boşluğu — düşene dokunulmadan tren durdurulabilsin diye.'), 46500);
+      setTimeout(() => addExemplarPulse(-0.1238, 51.5308), 49400);
 
-      // ── FADE → TITLE  t=39–40.5s ─────────────────────────────
+      // 6f — Return to Istanbul (t=50s)
+      setTimeout(() => {
+        heroText(null);
+        map.flyTo({ center:MAP_CENTER, zoom:ZOOM_INIT, pitch:PITCH_INIT,
+          bearing:BEARING, duration:4000, curve:1.8, easing:easeOut, essential:true });
+      }, 50000);
+      setTimeout(() => heroText('İstanbul\'da peronlar açık.'), 51500);
+      setTimeout(() => heroText(null), 54400);
+
+      // ── FADE → TITLE  t=54.5s ────────────────────────────────
       setTimeout(() => {
         renderActive = false;
         d3.select(canvas).transition().duration(1500).ease(d3.easeLinear)
@@ -1680,7 +1718,7 @@ function playHeroMap() {
           titleLayer.style.opacity    = '1';
           titleLayer.style.pointerEvents = 'auto';
         }
-      }, 39000);
+      }, 54500);
     }
 
     const vpObs = new IntersectionObserver(entries => {
