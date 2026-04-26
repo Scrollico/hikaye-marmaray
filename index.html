@@ -1763,103 +1763,6 @@ function playHeroMap() {
       if (_map) _map.triggerRepaint();
     }
 
-    // ── Foreign metro lines ───────────────────────────────────────
-    // Coordinates are station-accurate simplified LineStrings.
-    // Tokyo: JR Yamanote Line, segment Ikebukuro→Shin-Okubo→Shinjuku
-    // Seoul: Line 2 segment Seocho→Gangnam→Seolleung
-    // London: Piccadilly Line segment Caledonian Rd→King's Cross→Russell Sq
-    const FOREIGN_LINES = {
-      'tokyo-line': {
-        type:'FeatureCollection', features:[{
-          type:'Feature', geometry:{
-            type:'LineString',
-            coordinates:[
-              [139.7086,35.7294],[139.7069,35.7198],[139.7038,35.7123],
-              [139.7008,35.7011],[139.7003,35.6960],[139.7004,35.6896],
-            ]
-          }, properties:{}
-        }]
-      },
-      'seoul-line': {
-        type:'FeatureCollection', features:[{
-          type:'Feature', geometry:{
-            type:'LineString',
-            coordinates:[
-              [127.0081,37.4837],[127.0161,37.4892],[127.0276,37.4979],
-              [127.0354,37.5004],[127.0487,37.5043],
-            ]
-          }, properties:{}
-        }]
-      },
-      'london-line': {
-        type:'FeatureCollection', features:[{
-          type:'Feature', geometry:{
-            type:'LineString',
-            // Piccadilly Line: Caledonian Rd → King's Cross → Russell Sq
-            coordinates:[
-              [-0.1198,51.5418],[-0.1238,51.5308],[-0.1241,51.5230],
-            ]
-          }, properties:{}
-        },{
-          type:'Feature', geometry:{
-            type:'LineString',
-            // Victoria Line: Highbury → King's Cross → Euston
-            coordinates:[
-              [-0.1056,51.5456],[-0.1238,51.5308],[-0.1325,51.5242],
-            ]
-          }, properties:{}
-        }]
-      },
-    };
-
-    // Add all foreign line sources + layers at load time (opacity 0)
-    function addForeignLines() {
-      Object.entries(FOREIGN_LINES).forEach(([id, geojson]) => {
-        try {
-          if (!map.getSource(id + '-src')) {
-            map.addSource(id + '-src', { type:'geojson', data:geojson });
-            map.addLayer({
-              id: id + '-layer', type:'line', source: id + '-src',
-              layout:{ 'line-cap':'round', 'line-join':'round' },
-              paint:{
-                'line-color':'#8080FF',
-                'line-width': isMob ? 2 : 2.5,
-                'line-blur': 0.4,
-                'line-opacity': 0,
-                'line-opacity-transition':{ duration:800, delay:0 },
-              }
-            });
-          }
-        } catch(e){}
-      });
-    }
-
-    function showForeignLine(id, visible) {
-      try {
-        map.setPaintProperty(id + '-line-layer', 'line-opacity', visible ? 0.75 : 0);
-      } catch(e){}
-      // also try the id as-is (stored as id + '-layer')
-      try {
-        map.setPaintProperty(id + '-layer', 'line-opacity', visible ? 0.75 : 0);
-      } catch(e){}
-    }
-
-    // Foreign station labels for Act 6 close-ups
-    function buildForeignAnnotations() {
-      registerLabel('label-shinokubo', 139.7008, 35.7011, '#8080FF', [
-        { text: 'Shin-Okubo',  color: '#374152' },
-        { text: 'JR Yamanote', color: '#8080FF' },
-      ], isMob ? 14 : 18, isMob ? -14 : -18);
-      registerLabel('label-gangnam', 127.0276, 37.4979, '#8080FF', [
-        { text: 'Gangnam',  color: '#374152' },
-        { text: 'Hat 2',    color: '#8080FF' },
-      ], isMob ? 14 : 18, isMob ? -14 : -18);
-      registerLabel('label-kingscross', -0.1238, 51.5308, '#8080FF', [
-        { text: "King's Cross", color: '#374152' },
-        { text: 'Underground',  color: '#8080FF' },
-      ], isMob ? 14 : 18, isMob ? -14 : -18);
-    }
-
     function buildAnnotations() {
       // Bostancı: upper-right offset clears single pulse ring (maxR≈38px)
       registerLabel('label-bostanci', 29.0969, 40.9629, '#8080FF', [
@@ -1901,9 +1804,7 @@ function playHeroMap() {
     function runAutoplay() {
       if (_played) return;
       _played = true;
-      addForeignLines();
       buildAnnotations();
-      buildForeignAnnotations();
 
       // ── ACT 1: EXPOSITION  t=0–7s ────────────────────────────
       heroText('İstanbul. İki yaka, on dört milyon insan.');
@@ -1983,8 +1884,8 @@ function playHeroMap() {
       }, 26000);
       setTimeout(() => heroText(null), 28500);
 
-      // ── ACT 6: CITY HOP  t=29–80s ───────────────────────────
-      // Exemplar pulse — smaller than Istanbul incident rings
+      // ── ACT 6: CITY HOP  t=29–63s ───────────────────────────
+      // Exemplar pulse — smaller than Istanbul incident rings (22px max)
       function addExemplarPulse(lon, lat) {
         pulseRings.push({ lon, lat, t0: performance.now(), dur: 2000, maxR: isMob ? 22 : 18 });
         if (_map) _map.triggerRepaint();
@@ -1992,42 +1893,27 @@ function playHeroMap() {
 
       const easeOut = t => t * (2 - t);
 
-      // ── Sparkline helper ─────────────────────────────────
-      // Tokyo: Matsubayashi, Sawada & Ueda (2013), J Affect Disord 147(1-3):487-9
-      // DOI: 10.1016/j.jad.2013.01.036 — reported ~84% reduction at stations with blue LEDs
-      // Seoul: platform screen doors Line 2, phased 2002–2009; Lee et al. studies show
-      //   dramatic reduction in subway suicide attempts — exact % varies, using soft language
-      // London: anti-suicide pits (1920s onward); architectural, not extensively quantified
-      function mkSpark(id, stat, sparkPoints, label) {
-        let el = document.getElementById(id);
-        if (!el) {
-          el = document.createElement('div');
-          el.id = id;
-          el.className = 'city-spark';
-          // Sparkline SVG: two-point line, 60×18
-          const [x1,y1,x2,y2] = sparkPoints; // already in svg coords
-          el.innerHTML = `
-            <div class="spark-stat">${stat}</div>
-            <svg width="60" height="18" viewBox="0 0 60 18" style="overflow:visible">
-              <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
-                stroke="#374152" stroke-width="1.5" stroke-linecap="round"/>
-              <circle cx="${x2}" cy="${y2}" r="3" fill="#8080FF"/>
-            </svg>
-            <div class="spark-label">${label}</div>`;
-          canvas.appendChild(el);
-        }
-        return el;
+      // Crossfade helper: fade map out → jumpTo → wait idle → fade in → callback
+      // With pre-loaded tiles, idle fires in <100ms. Total: ~1400ms typical, 1700ms max.
+      function crossfadeTo(center, zoom, pitch, bearing, done) {
+        heroText(null);
+        mbDiv.style.transition = 'opacity 0.6s ease';
+        mbDiv.style.opacity = '0';
+        setTimeout(() => {
+          map.jumpTo({ center, zoom, pitch, bearing });
+          let resolved = false;
+          function proceed() {
+            if (resolved) return; resolved = true;
+            mbDiv.style.transition = 'opacity 0.6s ease';
+            mbDiv.style.opacity = '1';
+            setTimeout(done, 620);
+          }
+          map.once('idle', proceed);
+          setTimeout(proceed, 500); // safety cap for slow connections
+        }, 620);
       }
 
-      // Pre-create sparklines (hidden)
-      const sparkTokyo  = mkSpark('spark-tokyo',  '%84 azalma',  [4,14,56,4],   'Tokyo Yamanote, 2002–2010');
-      const sparkSeoul  = mkSpark('spark-seoul',  'ciddi azalma', [4,14,56,6],  'Seul Hat 2, 2009–2019');
-      const sparkLondon = mkSpark('spark-london', 'hayatta kalma şansını artırıyor', [4,14,56,8], 'Londra Underground');
-
-      function showSpark(el)  { el.style.opacity = '1'; }
-      function hideSpark(el)  { el.style.opacity = '0'; }
-
-      // ── 6a: Trend t=29–31.5s — camera locked, rings settle ────
+      // ── 6a: Trend t=29s — camera locked, rings settle ─────────
       setTimeout(() => {
         cumRings.forEach(r => { r.op = 0.4; r.sw = 1; });
         if (_map) _map.triggerRepaint();
@@ -2035,7 +1921,7 @@ function playHeroMap() {
       }, 29000);
       setTimeout(() => heroText(null), 31400);
 
-      // ── 6b: Setup t=31.5s, fly Istanbul→Tokyo (8500ms) ────────
+      // ── 6b: Setup + flyTo Istanbul→Tokyo (8500ms) t=31.5s ─────
       setTimeout(() => heroText('Başka şehirlerde başka tercihler yapıldı.'), 31500);
       setTimeout(() => {
         map.flyTo({ center:[139.7008,35.7011], zoom:16, pitch:60, bearing:0,
@@ -2043,83 +1929,50 @@ function playHeroMap() {
       }, 32500);
       setTimeout(() => heroText(null), 33900);
 
-      // ── 6c: In-flight overlay t=34s ────────────────────────────
+      // ── 6c: In-flight overlay + Tokyo arrival ─────────────────
+      // flyTo duration 8500ms, starts at 32500 → arrives ~41000
       setTimeout(() => heroText('Tokyo\'ya.'), 34000);
-
-      // Arrival at t=41000 (32500+8500). Hold 0.6s then pulse+line+label+overlay.
       setTimeout(() => heroText(null), 40900);
       setTimeout(() => {
-        addExemplarPulse(139.7008,35.7011);
-        showSpark(sparkTokyo);
-        showForeignLine('tokyo-line', true);
-        showAnno('label-shinokubo', true);
+        addExemplarPulse(139.7008, 35.7011);
+        heroText('Tokyo. Peronlarda mavi ışık.');
       }, 41600);
-      setTimeout(() => heroText('JR hatları, peronlarda mavi ışık. Yumuşak, sürekli yanan.'), 41700);
 
-      // ── 6d: fly Tokyo→Seoul (5500ms) t=45.2s ──────────────────
+      // ── 6d: crossfade → Seoul  t=44000 ────────────────────────
+      // crossfadeTo takes ~1400ms → done callback fires ~t=45400
       setTimeout(() => {
-        heroText(null); hideSpark(sparkTokyo);
-        showForeignLine('tokyo-line', false); showAnno('label-shinokubo', false);
-      }, 45100);
-      setTimeout(() => {
-        map.flyTo({ center:[127.0276,37.4979], zoom:16, pitch:60, bearing:0,
-          duration:5500, curve:1.6, speed:0.7, easing:easeOut, essential:true });
-      }, 45200);
-      setTimeout(() => heroText('Seul\'e.'), 45300);
+        crossfadeTo([127.0276,37.4979], 16, 60, 0, () => {
+          addExemplarPulse(127.0276, 37.4979);
+          heroText('Seul. Platform kapıları.');
+        });
+      }, 44000);
 
-      // Arrival t=50700 (45200+5500)
-      setTimeout(() => heroText(null), 50600);
+      // ── 6e: crossfade → London  t=47400 ───────────────────────
+      // Seoul overlay shown from ~45400 for ~2000ms
       setTimeout(() => {
-        addExemplarPulse(127.0276,37.4979);
-        showSpark(sparkSeoul);
-        showForeignLine('seoul-line', true);
-        showAnno('label-gangnam', true);
-      }, 51300);
-      setTimeout(() => heroText('Seul. Platform kapıları. Tren gelmeden açılmaz.'), 51400);
+        crossfadeTo([-0.1238,51.5308], 16, 60, 0, () => {
+          addExemplarPulse(-0.1238, 51.5308);
+          heroText('Londra. Ray altında güvenlik boşluğu.');
+        });
+      }, 47400);
 
-      // ── 6e: fly Seoul→London (5500ms) t=54.9s ─────────────────
+      // ── 6f: crossfade → Istanbul wide  t=50800 ────────────────
+      // London overlay shown from ~48800 for ~2000ms
       setTimeout(() => {
-        heroText(null); hideSpark(sparkSeoul);
-        showForeignLine('seoul-line', false); showAnno('label-gangnam', false);
-      }, 54800);
-      setTimeout(() => {
-        map.flyTo({ center:[-0.1238,51.5308], zoom:16, pitch:60, bearing:0,
-          duration:5500, curve:1.6, speed:0.7, easing:easeOut, essential:true });
-      }, 54900);
-      setTimeout(() => heroText('Londra\'ya.'), 55000);
+        crossfadeTo(MAP_CENTER, ZOOM_INIT, PITCH_INIT, BEARING, () => {
+          heroText('İstanbul\'da peronlar açık.');
+        });
+      }, 50800);
 
-      // Arrival t=60400 (54900+5500)
-      setTimeout(() => heroText(null), 60300);
-      setTimeout(() => {
-        addExemplarPulse(-0.1238,51.5308);
-        showSpark(sparkLondon);
-        showForeignLine('london-line', true);
-        showAnno('label-kingscross', true);
-      }, 61000);
-      setTimeout(() => heroText('Londra. Ray altında güvenlik boşluğu — düşene dokunulmadan tren durdurulabilsin diye.'), 61100);
+      // ── CODA: closing question  t=54700 ───────────────────────
+      // Istanbul overlay shown from ~52200 for ~2500ms. Camera fully still.
+      setTimeout(() => heroText(null), 54600);
+      setTimeout(() => heroText('Peron kapısı bir tedbir.'), 54700);
+      setTimeout(() => heroText(null), 57100);
+      setTimeout(() => heroText('Peki sorumlu sadece güvenli kapılar mı?'), 57200);
+      setTimeout(() => heroText(null), 60100);
 
-      // ── 6f: fly London→Istanbul (5000ms) t=64.6s ──────────────
-      setTimeout(() => {
-        heroText(null); hideSpark(sparkLondon);
-        showForeignLine('london-line', false); showAnno('label-kingscross', false);
-      }, 64500);
-      setTimeout(() => {
-        map.flyTo({ center:MAP_CENTER, zoom:ZOOM_INIT, pitch:PITCH_INIT,
-          bearing:BEARING, duration:5000, curve:1.8, speed:0.7, easing:easeOut, essential:true });
-      }, 64600);
-
-      // Arrival t=69600. Hold 1.4s, then overlay.
-      setTimeout(() => heroText('İstanbul\'da peronlar açık.'), 71000);
-      setTimeout(() => heroText(null), 73400);
-
-      // ── CODA D: psychology lines t=73.5s ──────────────────────
-      // Camera fully still. Map on wide Istanbul. All rings at 0.4 opacity.
-      setTimeout(() => heroText('Peron kapısı bir tedbir. Sebep değil.'), 73500);
-      setTimeout(() => heroText(null), 75900);
-      setTimeout(() => heroText('Türkiye\'de ruh sağlığı desteği hâlâ yetersiz. Bir mavi ışık, kırk yıllık eksikliği kapatmaz.'), 76000);
-      setTimeout(() => heroText(null), 78900);
-
-      // ── FADE → TITLE  t=80.4s ─────────────────────────────────
+      // ── FADE → TITLE  t=61.6s ─────────────────────────────────
       setTimeout(() => {
         renderActive = false;
         d3.select(canvas).transition().duration(1500).ease(d3.easeLinear)
@@ -2130,7 +1983,7 @@ function playHeroMap() {
           titleLayer.style.opacity    = '1';
           titleLayer.style.pointerEvents = 'auto';
         }
-      }, 80400);
+      }, 61600);
     }
 
     const vpObs = new IntersectionObserver(entries => {
