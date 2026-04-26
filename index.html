@@ -337,6 +337,52 @@ body {
   }
 }
 
+/* ── Full-page preloader ── */
+#page-preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #f8f5e4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: opacity 0.6s ease;
+}
+.preloader-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  color: #374152;
+}
+.preloader-sub {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: rgba(55,65,82,0.6);
+  margin-bottom: 6px;
+}
+.preloader-bar-track {
+  width: 240px;
+  height: 2px;
+  background: rgba(55,65,82,0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.preloader-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: #8080FF;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+/* ── Page content — hidden until preload done ── */
+#page-content {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.6s ease;
+}
+
 /* ── Map tile loader ── */
 #map-tile-loader {
   position: absolute;
@@ -724,6 +770,18 @@ body {
 </style>
 </head>
 <body>
+
+<!-- ════════════════════ FULL-PAGE PRELOADER ════════════════════ -->
+<div id="page-preloader" aria-live="polite" aria-label="Sayfa yükleniyor">
+  <div class="preloader-text">Sayfa yükleniyor</div>
+  <div class="preloader-sub">Daha iyi bir deneyim için lütfen bekleyin</div>
+  <div class="preloader-bar-track">
+    <div id="preloader-progress-fill" class="preloader-bar-fill"></div>
+  </div>
+</div>
+
+<!-- ════════════════════ PAGE CONTENT (hidden until preload done) ════════════════════ -->
+<div id="page-content">
 
 <!-- ── Crisis notice ── -->
 <div class="crisis-bar">
@@ -1141,7 +1199,115 @@ const C = {
     setTimeout(() => typeInto(line.el, line.text, startNext), line.delay);
   }
 
-  document.addEventListener('DOMContentLoaded', () => setTimeout(() => runLines(0), 500));
+  // Exposed so preloader can trigger after warmup completes
+  window._startTypewriter = () => setTimeout(() => runLines(0), 500);
+}());
+
+// ═══════════════════════════════════════════════════════════
+// FULL-PAGE PRELOADER — tile warmup with separate map instance
+// Blocks page reveal until all close-up tiles are cached
+// ═══════════════════════════════════════════════════════════
+(function pagePreloader() {
+  const WARMUP_STOPS = [
+    { center:[28.98,   41.02  ], zoom:11   }, // Istanbul wide
+    { center:[29.0969, 40.9629], zoom:14.5 }, // Bostancı close-up (Act 2)
+    { center:[28.9506, 41.0047], zoom:15.2 }, // Yenikapı close-up (Act 4)
+    { center:[139.7008,35.7011], zoom:16   }, // Tokyo Shin-Okubo
+    { center:[127.0276,37.4979], zoom:16   }, // Seoul Gangnam
+    { center:[-0.1238, 51.5308], zoom:16   }, // London King's Cross
+  ];
+
+  function revealPage() {
+    const preloader    = document.getElementById('page-preloader');
+    const pageContent  = document.getElementById('page-content');
+    if (preloader) {
+      preloader.style.transition = 'opacity 0.6s ease';
+      preloader.style.opacity    = '0';
+      setTimeout(() => { preloader.style.display = 'none'; }, 650);
+    }
+    if (pageContent) {
+      pageContent.style.visibility = 'visible';
+      pageContent.style.transition = 'opacity 0.6s ease';
+      pageContent.style.opacity    = '1';
+    }
+    if (typeof window._startTypewriter === 'function') {
+      setTimeout(window._startTypewriter, 100);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const fill = document.getElementById('preloader-progress-fill');
+    function setProgress(p) { if (fill) fill.style.width = (p * 100).toFixed(1) + '%'; }
+
+    // If Mapbox not available, just reveal
+    if (typeof mapboxgl === 'undefined' || !window.MAPBOX_TOKEN) {
+      revealPage(); return;
+    }
+
+    // Hidden 1×1 div for the warmup map — never shown to user
+    const warmEl = document.createElement('div');
+    warmEl.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1;';
+    document.body.appendChild(warmEl);
+
+    mapboxgl.accessToken = window.MAPBOX_TOKEN;
+    const wMap = new mapboxgl.Map({
+      container: warmEl,
+      style: 'mapbox://styles/mapbox/light-v11',
+      center: WARMUP_STOPS[0].center,
+      zoom:   WARMUP_STOPS[0].zoom,
+      interactive: false, attributionControl: false, fadeDuration: 0,
+    });
+
+    let finished = false;
+    const HARD_LIMIT = 15000;
+
+    // Hard failsafe: proceed after 15s no matter what
+    const hardTimer = setTimeout(() => {
+      if (!finished) {
+        finished = true;
+        console.warn('[preloader] 15s hard failsafe — proceeding');
+        try { wMap.remove(); warmEl.remove(); } catch(e){}
+        revealPage();
+      }
+    }, HARD_LIMIT);
+
+    async function warmup() {
+      await Promise.race([
+        new Promise(r => wMap.once('load', r)),
+        new Promise(r => setTimeout(r, 5000)),
+      ]);
+      setProgress(0.05);
+
+      for (let i = 0; i < WARMUP_STOPS.length; i++) {
+        const stop = WARMUP_STOPS[i];
+        wMap.jumpTo({ center:stop.center, zoom:stop.zoom, pitch:0, bearing:0 });
+        await Promise.race([
+          new Promise(r => wMap.once('idle', r)),
+          new Promise(r => setTimeout(r, 2500)),
+        ]);
+        setProgress((i + 1) / WARMUP_STOPS.length);
+      }
+      // Return to Istanbul for clean handoff
+      wMap.jumpTo({ center:WARMUP_STOPS[0].center, zoom:WARMUP_STOPS[0].zoom });
+
+      if (!finished) {
+        finished = true;
+        clearTimeout(hardTimer);
+        try { wMap.remove(); warmEl.remove(); } catch(e){}
+        revealPage();
+      }
+    }
+
+    warmup().catch(e => {
+      console.warn('[preloader] warmup error:', e);
+      if (!finished) {
+        finished = true;
+        clearTimeout(hardTimer);
+        try { wMap.remove(); warmEl.remove(); } catch(e){}
+        revealPage();
+      }
+    });
+  });
 }());
 
 // ═══════════════════════════════════════════════════════════
@@ -1187,19 +1353,6 @@ function playHeroMap() {
     if (mbDiv._mbMap) { try { mbDiv._mbMap.remove(); } catch(e){} }
     mbDiv.innerHTML = '';
   }
-  mbDiv.style.opacity = '0'; // hidden until tile warmup completes
-
-  // ── Tile loader UI ────────────────────────────────────
-  let loaderUi = document.getElementById('map-tile-loader');
-  if (!loaderUi) {
-    loaderUi = document.createElement('div');
-    loaderUi.id = 'map-tile-loader';
-    loaderUi.innerHTML = '<div class="loader-text">Harita yükleniyor</div><div class="loader-dot"></div>';
-    canvas.appendChild(loaderUi);
-  }
-  loaderUi.style.opacity = '1';
-  loaderUi.style.display = '';
-
   // ── SVG overlay — pulse rings only ───────────────────
   svgEl.removeAttribute('viewBox');
   const svg   = d3.select(svgEl);
@@ -1560,70 +1713,19 @@ function playHeroMap() {
       .finally(() => {
         mapReady = true;
         map.triggerRepaint();
-
-        // ── Tile warmup: jumpTo each city so tiles pre-cache ─────────
-        const WARMUP_CITIES = [
-          { center:[139.7008, 35.7011], zoom:16 },
-          { center:[127.0276, 37.4979], zoom:16 },
-          { center:[-0.1238,  51.5308], zoom:16 },
-          { center:MAP_CENTER,          zoom:ZOOM_INIT },
-        ];
-        let warmupDone = false;
-        const loaderEl = document.getElementById('map-tile-loader');
-
-        async function runWarmup() {
-          const deadline = Date.now() + 8000;
-          for (const c of WARMUP_CITIES) {
-            if (Date.now() > deadline) {
-              console.warn('[warmup] timeout — skipping remaining cities');
-              break;
-            }
-            map.jumpTo({ center: c.center, zoom: c.zoom, pitch:0, bearing:0 });
-            await Promise.race([
-              new Promise(r => map.once('idle', r)),
-              new Promise(r => setTimeout(r, 2000)),
-            ]);
-          }
-          // Return to Istanbul start position
-          map.jumpTo({ center:MAP_CENTER, zoom:ZOOM_INIT, pitch:PITCH_INIT, bearing:BEARING });
-          warmupDone = true;
-
-          // Fade loader out, fade map in
-          if (loaderEl) loaderEl.style.opacity = '0';
-          mbDiv.style.transition = 'opacity 0.6s ease';
-          mbDiv.style.opacity = '1';
-          setTimeout(() => {
-            if (loaderEl) loaderEl.style.display = 'none';
-            startCinematic();
-          }, 650);
-        }
-
-        // Keep mbDiv hidden during warmup
-        mbDiv.style.opacity = '0';
-        runWarmup().catch(() => {
-          warmupDone = true;
-          if (loaderEl) loaderEl.style.opacity = '0';
-          mbDiv.style.transition = 'opacity 0.6s ease';
-          mbDiv.style.opacity = '1';
-          setTimeout(() => {
-            if (loaderEl) loaderEl.style.display = 'none';
-            startCinematic();
-          }, 650);
-        });
+        mbDiv.style.opacity = '1'; // tiles pre-cached by page preloader
+        startCinematic();
       });
   });
 
-  // Failsafe — if map.on('load') never fires, start anyway after 12s
+  // Failsafe — if map.on('load') never fires, start after 10s
   setTimeout(() => {
     if (!mapReady) {
-      mapReady = true;
-      map.triggerRepaint();
-      const loaderEl = document.getElementById('map-tile-loader');
-      if (loaderEl) { loaderEl.style.opacity = '0'; loaderEl.style.display = 'none'; }
+      mapReady = true; map.triggerRepaint();
       mbDiv.style.opacity = '1';
       startCinematic();
     }
-  }, 12000);
+  }, 10000);
 
   // ── 6-act autoplay cinematic (~37s) ──────────────────────────
   function startCinematic() {
@@ -1659,6 +1761,103 @@ function playHeroMap() {
         if (lbl.showTime) lbl.hideTime = performance.now();
       }
       if (_map) _map.triggerRepaint();
+    }
+
+    // ── Foreign metro lines ───────────────────────────────────────
+    // Coordinates are station-accurate simplified LineStrings.
+    // Tokyo: JR Yamanote Line, segment Ikebukuro→Shin-Okubo→Shinjuku
+    // Seoul: Line 2 segment Seocho→Gangnam→Seolleung
+    // London: Piccadilly Line segment Caledonian Rd→King's Cross→Russell Sq
+    const FOREIGN_LINES = {
+      'tokyo-line': {
+        type:'FeatureCollection', features:[{
+          type:'Feature', geometry:{
+            type:'LineString',
+            coordinates:[
+              [139.7086,35.7294],[139.7069,35.7198],[139.7038,35.7123],
+              [139.7008,35.7011],[139.7003,35.6960],[139.7004,35.6896],
+            ]
+          }, properties:{}
+        }]
+      },
+      'seoul-line': {
+        type:'FeatureCollection', features:[{
+          type:'Feature', geometry:{
+            type:'LineString',
+            coordinates:[
+              [127.0081,37.4837],[127.0161,37.4892],[127.0276,37.4979],
+              [127.0354,37.5004],[127.0487,37.5043],
+            ]
+          }, properties:{}
+        }]
+      },
+      'london-line': {
+        type:'FeatureCollection', features:[{
+          type:'Feature', geometry:{
+            type:'LineString',
+            // Piccadilly Line: Caledonian Rd → King's Cross → Russell Sq
+            coordinates:[
+              [-0.1198,51.5418],[-0.1238,51.5308],[-0.1241,51.5230],
+            ]
+          }, properties:{}
+        },{
+          type:'Feature', geometry:{
+            type:'LineString',
+            // Victoria Line: Highbury → King's Cross → Euston
+            coordinates:[
+              [-0.1056,51.5456],[-0.1238,51.5308],[-0.1325,51.5242],
+            ]
+          }, properties:{}
+        }]
+      },
+    };
+
+    // Add all foreign line sources + layers at load time (opacity 0)
+    function addForeignLines() {
+      Object.entries(FOREIGN_LINES).forEach(([id, geojson]) => {
+        try {
+          if (!map.getSource(id + '-src')) {
+            map.addSource(id + '-src', { type:'geojson', data:geojson });
+            map.addLayer({
+              id: id + '-layer', type:'line', source: id + '-src',
+              layout:{ 'line-cap':'round', 'line-join':'round' },
+              paint:{
+                'line-color':'#8080FF',
+                'line-width': isMob ? 2 : 2.5,
+                'line-blur': 0.4,
+                'line-opacity': 0,
+                'line-opacity-transition':{ duration:800, delay:0 },
+              }
+            });
+          }
+        } catch(e){}
+      });
+    }
+
+    function showForeignLine(id, visible) {
+      try {
+        map.setPaintProperty(id + '-line-layer', 'line-opacity', visible ? 0.75 : 0);
+      } catch(e){}
+      // also try the id as-is (stored as id + '-layer')
+      try {
+        map.setPaintProperty(id + '-layer', 'line-opacity', visible ? 0.75 : 0);
+      } catch(e){}
+    }
+
+    // Foreign station labels for Act 6 close-ups
+    function buildForeignAnnotations() {
+      registerLabel('label-shinokubo', 139.7008, 35.7011, '#8080FF', [
+        { text: 'Shin-Okubo',  color: '#374152' },
+        { text: 'JR Yamanote', color: '#8080FF' },
+      ], isMob ? 14 : 18, isMob ? -14 : -18);
+      registerLabel('label-gangnam', 127.0276, 37.4979, '#8080FF', [
+        { text: 'Gangnam',  color: '#374152' },
+        { text: 'Hat 2',    color: '#8080FF' },
+      ], isMob ? 14 : 18, isMob ? -14 : -18);
+      registerLabel('label-kingscross', -0.1238, 51.5308, '#8080FF', [
+        { text: "King's Cross", color: '#374152' },
+        { text: 'Underground',  color: '#8080FF' },
+      ], isMob ? 14 : 18, isMob ? -14 : -18);
     }
 
     function buildAnnotations() {
@@ -1702,7 +1901,9 @@ function playHeroMap() {
     function runAutoplay() {
       if (_played) return;
       _played = true;
+      addForeignLines();
       buildAnnotations();
+      buildForeignAnnotations();
 
       // ── ACT 1: EXPOSITION  t=0–7s ────────────────────────────
       heroText('İstanbul. İki yaka, on dört milyon insan.');
@@ -1845,13 +2046,21 @@ function playHeroMap() {
       // ── 6c: In-flight overlay t=34s ────────────────────────────
       setTimeout(() => heroText('Tokyo\'ya.'), 34000);
 
-      // Arrival at t=41000 (32500+8500). Hold 0.6s then pulse+overlay.
+      // Arrival at t=41000 (32500+8500). Hold 0.6s then pulse+line+label+overlay.
       setTimeout(() => heroText(null), 40900);
-      setTimeout(() => { addExemplarPulse(139.7008,35.7011); showSpark(sparkTokyo); }, 41600);
+      setTimeout(() => {
+        addExemplarPulse(139.7008,35.7011);
+        showSpark(sparkTokyo);
+        showForeignLine('tokyo-line', true);
+        showAnno('label-shinokubo', true);
+      }, 41600);
       setTimeout(() => heroText('JR hatları, peronlarda mavi ışık. Yumuşak, sürekli yanan.'), 41700);
 
       // ── 6d: fly Tokyo→Seoul (5500ms) t=45.2s ──────────────────
-      setTimeout(() => { heroText(null); hideSpark(sparkTokyo); }, 45100);
+      setTimeout(() => {
+        heroText(null); hideSpark(sparkTokyo);
+        showForeignLine('tokyo-line', false); showAnno('label-shinokubo', false);
+      }, 45100);
       setTimeout(() => {
         map.flyTo({ center:[127.0276,37.4979], zoom:16, pitch:60, bearing:0,
           duration:5500, curve:1.6, speed:0.7, easing:easeOut, essential:true });
@@ -1860,11 +2069,19 @@ function playHeroMap() {
 
       // Arrival t=50700 (45200+5500)
       setTimeout(() => heroText(null), 50600);
-      setTimeout(() => { addExemplarPulse(127.0276,37.4979); showSpark(sparkSeoul); }, 51300);
+      setTimeout(() => {
+        addExemplarPulse(127.0276,37.4979);
+        showSpark(sparkSeoul);
+        showForeignLine('seoul-line', true);
+        showAnno('label-gangnam', true);
+      }, 51300);
       setTimeout(() => heroText('Seul. Platform kapıları. Tren gelmeden açılmaz.'), 51400);
 
       // ── 6e: fly Seoul→London (5500ms) t=54.9s ─────────────────
-      setTimeout(() => { heroText(null); hideSpark(sparkSeoul); }, 54800);
+      setTimeout(() => {
+        heroText(null); hideSpark(sparkSeoul);
+        showForeignLine('seoul-line', false); showAnno('label-gangnam', false);
+      }, 54800);
       setTimeout(() => {
         map.flyTo({ center:[-0.1238,51.5308], zoom:16, pitch:60, bearing:0,
           duration:5500, curve:1.6, speed:0.7, easing:easeOut, essential:true });
@@ -1873,11 +2090,19 @@ function playHeroMap() {
 
       // Arrival t=60400 (54900+5500)
       setTimeout(() => heroText(null), 60300);
-      setTimeout(() => { addExemplarPulse(-0.1238,51.5308); showSpark(sparkLondon); }, 61000);
+      setTimeout(() => {
+        addExemplarPulse(-0.1238,51.5308);
+        showSpark(sparkLondon);
+        showForeignLine('london-line', true);
+        showAnno('label-kingscross', true);
+      }, 61000);
       setTimeout(() => heroText('Londra. Ray altında güvenlik boşluğu — düşene dokunulmadan tren durdurulabilsin diye.'), 61100);
 
       // ── 6f: fly London→Istanbul (5000ms) t=64.6s ──────────────
-      setTimeout(() => { heroText(null); hideSpark(sparkLondon); }, 64500);
+      setTimeout(() => {
+        heroText(null); hideSpark(sparkLondon);
+        showForeignLine('london-line', false); showAnno('label-kingscross', false);
+      }, 64500);
       setTimeout(() => {
         map.flyTo({ center:MAP_CENTER, zoom:ZOOM_INIT, pitch:PITCH_INIT,
           bearing:BEARING, duration:5000, curve:1.8, speed:0.7, easing:easeOut, essential:true });
@@ -2985,5 +3210,7 @@ drawState(0);
   }
 })();
 </script>
+
+</div><!-- /#page-content -->
 </body>
 </html>
